@@ -3,6 +3,18 @@
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
 and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress, code is provided as-is!**
 
+The models in this repo are benchmarked with the [COCOLA metric](https://arxiv.org/abs/2404.16969). Since the models where introduced in that paper for the first time,
+please cite that work if you found this baseline useful for your work. Thanks!
+
+```
+@article{ciranni2024cocola,
+  title={Cocola: Coherence-oriented contrastive learning of musical audio representations},
+  author={Ciranni, Ruben and Mariani, Giorgio and Mancusi, Michele and Postolache, Emilian and Fabbro, Giorgio and Rodol{\`a}, Emanuele and Cosmo, Luca},
+  journal={arXiv preprint arXiv:2404.16969},
+  year={2024}
+}
+```
+
   
 ![alt text](res/logo.jpg)
 
