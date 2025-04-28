@@ -1,3 +1,6 @@
 [submodule "stable-audio-tools"]
 	path = stable-audio-tools
 	url = git@github.com:Stability-AI/stable-audio-tools.git
+[submodule "ffmpeg"]
+	path = ffmpeg
+	url = git@github.com:FFmpeg/FFmpeg.git
