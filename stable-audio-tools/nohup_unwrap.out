@@ -1,0 +1,16 @@
+/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/torch/nn/utils/weight_norm.py:143: FutureWarning: `torch.nn.utils.weight_norm` is deprecated in favor of `torch.nn.utils.parametrizations.weight_norm`.
+  WeightNorm.apply(module, name, dim)
+Traceback (most recent call last):
+  File "/home/xmy/DiffusionTunes/stable-audio-tools/unwrap_model.py", line 74, in <module>
+    training_wrapper = DiffusionCondTrainingWrapper.load_from_checkpoint(
+  File "/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/pytorch_lightning/core/module.py", line 1552, in load_from_checkpoint
+    loaded = _load_from_checkpoint(
+  File "/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/pytorch_lightning/core/saving.py", line 64, in _load_from_checkpoint
+    checkpoint = _pl_migrate_checkpoint(
+  File "/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/pytorch_lightning/utilities/migration/utils.py", line 143, in _pl_migrate_checkpoint
+    checkpoint, migrations = migrate_checkpoint(checkpoint)
+  File "/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/pytorch_lightning/utilities/migration/utils.py", line 68, in migrate_checkpoint
+    checkpoint = migration_function(checkpoint)
+  File "/nvme0n1/xmy_anaconda3/envs/difft/lib/python3.10/site-packages/pytorch_lightning/utilities/migration/migration.py", line 94, in _migrate_loop_global_step_to_progress_tracking
+    global_step = checkpoint["global_step"]
+KeyError: 'global_step'
