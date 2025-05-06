@@ -3,18 +3,39 @@
 import os
 import soundfile as sf
 import numpy as np
+import mido
 
-example_length = 25
+example_length = 250
 index = 0
 
 # Root directory where your folders are
-root_dir = "/nvme0n1/xmy/slakh2100_flac_redux/test"
-save_dir = f"/nvme0n1/xmy/slakh250/test"
+root_dir = "/nvme0n1/xmy/slakh2100_flac_redux/train"
+save_dir = f"/nvme0n1/xmy/slakh250/train"
 
 # Fade duration in seconds
 fade_duration = 0.5  # 0.5 second fade-in and fade-out
 
+def extract_midi(input_path, output_path, start_time, end_time):
+    mid = mido.MidiFile(input_path)
+    new_mid = mido.MidiFile()
+    
+    for track in mid.tracks:
+        new_track = mido.MidiTrack()
+        current_time = 0
+        for msg in track:
+            current_time += msg.time
+            if start_time <= current_time <= end_time:
+                new_msg = msg.copy(time=msg.time)
+                new_track.append(new_msg)
+            elif current_time > end_time:
+                break
+        new_mid.tracks.append(new_track)
+    
+    new_mid.save(output_path)
+
 def truncate(folder):
+    global index
+
     folder_path = os.path.join(root_dir, folder)
     mix_path = os.path.join(folder_path, "mix.flac")
     folder_save_path = os.path.join(save_dir, folder)
@@ -53,6 +74,11 @@ def truncate(folder):
         # Save truncated+faded version
         sf.write(trunc_path, truncated, samplerate, format="FLAC")
         print(f"Created {trunc_path}")
+
+        # Extract MIDI for the first 10 seconds
+        midi_path = os.path.join(folder_path, "all_src.mid")
+        midi_output_path = os.path.join(folder_save_path, "trunc.mid")
+        extract_midi(midi_path, midi_output_path, 0, 10)
 
         index += 1
         print("-" * 20 + str(index) + "-" * 20)
