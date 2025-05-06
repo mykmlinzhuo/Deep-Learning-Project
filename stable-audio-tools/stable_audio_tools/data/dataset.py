@@ -843,6 +843,7 @@ def create_dataloader_from_config(dataset_config, batch_size, sample_size, sampl
 
         train_set = SampleDataset(
             configs,
+            keywords=dataset_config.get("keywords", True),
             sample_rate=sample_rate,
             sample_size=sample_size,
             random_crop=dataset_config.get("random_crop", True),

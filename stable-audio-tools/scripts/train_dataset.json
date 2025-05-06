@@ -7,5 +7,6 @@
             "custom_metadata_module": "/home/xmy/DiffusionTunes/stable-audio-tools/scripts/format_dataset.py"
         }
     ],
+    "keywords": ["full"],
     "random_crop": false
 }
