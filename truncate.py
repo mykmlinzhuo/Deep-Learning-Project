@@ -5,12 +5,12 @@ import soundfile as sf
 import numpy as np
 import mido
 
-example_length = 250
+example_length = 50
 index = 0
 
 # Root directory where your folders are
-root_dir = "/nvme0n1/xmy/slakh2100_flac_redux/train"
-save_dir = f"/nvme0n1/xmy/slakh250/train"
+root_dir = "/nvme0n1/xmy/slakh2100_flac_redux/test"
+save_dir = f"/nvme0n1/xmy/slakh1000/test"
 
 # Fade duration in seconds
 fade_duration = 0.5  # 0.5 second fade-in and fade-out

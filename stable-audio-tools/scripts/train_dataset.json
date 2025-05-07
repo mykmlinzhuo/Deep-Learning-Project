@@ -2,8 +2,8 @@
     "dataset_type": "audio_dir",
     "datasets": [
         {
-            "id": "slakh250",
-            "path": "/nvme0n1/xmy/slakh250/train",
+            "id": "slakh1000",
+            "path": "/nvme0n1/xmy/slakh1000/train",
             "custom_metadata_module": "/home/xmy/DiffusionTunes/stable-audio-tools/scripts/format_dataset.py"
         }
     ],
