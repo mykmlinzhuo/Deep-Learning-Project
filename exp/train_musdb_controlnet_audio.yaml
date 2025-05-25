@@ -4,7 +4,7 @@ train: True
 sample_rate: 44100
 chunk_dur: 47.55446713
 
-log_every_n_steps: 1000
+log_every_n_steps: 350
 
 model:
   _target_: main.module_controlnet_audio.Model
@@ -72,7 +72,7 @@ loggers:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     project: humming2melody
-    # entity: ${oc.env:WANDB_ENTITY}
+    entity: mykm050721-
     # offline: False  # set True to store all logs only locally
     job_type: "train"
     group: ""
@@ -89,5 +89,5 @@ trainer:
   max_epochs: -1
   enable_model_summary: False
   log_every_n_steps: 1 # Logs metrics every N batches
-  check_val_every_n_epoch: null
+  check_val_every_n_epoch: Null
   val_check_interval: ${log_every_n_steps}

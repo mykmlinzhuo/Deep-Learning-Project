@@ -4,7 +4,7 @@ train: True
 sample_rate: 44100
 chunk_dur: 47.55446713
 
-log_every_n_steps: 400
+log_every_n_steps: 20
 
 model:
   _target_: main.module_controlnet_audio.Model
@@ -39,7 +39,7 @@ datamodule:
     _target_: main.data.dataset_musdb.collate_fn_conditional
     _partial_: True
   drop_last: True
-  num_workers: 4
+  num_workers: 8
   pin_memory: True
   persistent_workers: True
   multiprocessing_context: spawn
@@ -71,8 +71,8 @@ callbacks:
 loggers:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
-    project: ${oc.env:WANDB_PROJECT}
-    entity: ${oc.env:WANDB_ENTITY}
+    project: humming2melody
+    entity: mykm050721-
     # offline: False  # set True to store all logs only locally
     job_type: "train"
     group: ""

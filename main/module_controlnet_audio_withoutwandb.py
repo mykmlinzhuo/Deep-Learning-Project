@@ -217,11 +217,7 @@ class SampleLogger(Callback):
         is_train = pl_module.training
         if is_train:
             pl_module.eval()
-        wandb_logger = get_wandb_logger(trainer)
-        if wandb_logger is None:
-            print("[SampleLogger] No wandb logger found, skipping logging.")
-            return
-        wandb_logger = wandb_logger.experiment
+        wandb_logger = get_wandb_logger(trainer).experiment
         _, y, prompts, start_seconds, total_seconds = batch
         y = torch.clip(y, -1, 1)
 

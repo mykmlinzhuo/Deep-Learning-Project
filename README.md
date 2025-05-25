@@ -157,6 +157,9 @@ PYTHONUNBUFFERED=1 TAG=musdb-controlnet-audio python train.py exp=train_musdb_co
 datamodule.train_dataset.path=data/musdb18hq/train.tar \ 
 datamodule.val_dataset.path=data/musdb18hq/test.tar
 ```
+```
+PYTHONUNBUFFERED=1 TAG=musdb-controlnet-audio python train.py exp=train_musdb_controlnet_audio datamodule.train_dataset.path=data/musdb18hq/train.tar datamodule.val_dataset.path=data/musdb18hq/test.tar
+```
 
 For resuming training with `checkpoint.ckpt` stored in `ckpts` run:
 ```

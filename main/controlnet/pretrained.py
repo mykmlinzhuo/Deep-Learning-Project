@@ -11,74 +11,23 @@ from main.controlnet.factory import create_model_from_config
 
 from huggingface_hub import hf_hub_download
 
-
-# def get_pretrained_controlnet_model(name: str,
-#                                     controlnet_types: List[str],
-#                                     depth_factor=0.5):
-#     # ✅ 显式指定 snapshot 路径（你机器上的真实路径）
-#     base_path = "/root/.cache/huggingface/hub/models--stabilityai--stable-audio-open-1.0/snapshots/4fa95cf49cd9ff9b544061efef94954f888ad5de"
-#     model_config_path = os.path.join(base_path, "model_config.json")
-#     model_ckpt_path   = os.path.join(base_path, "model.safetensors")  # 或改成 model.ckpt
-
-#     assert os.path.exists(model_config_path), f"Config file not found: {model_config_path}"
-#     assert os.path.exists(model_ckpt_path),   f"Checkpoint file not found: {model_ckpt_path}"
-
-#     # ✅ 加载 config
-#     with open(model_config_path, "r") as f:
-#         model_config = json.load(f)
-
-#     # ✅ 修改模型结构
-#     model_config["model_type"] = "diffusion_cond_controlnet"
-#     model_config["model"]["diffusion"]['config']["controlnet_depth_factor"] = depth_factor
-#     model_config["model"]["diffusion"]["type"] = "dit_controlnet"
-#     model_config["model"]["diffusion"]['controlnet_cond_ids'] = []
-
-#     for controlnet_type in controlnet_types:
-#         if controlnet_type in ["audio", "envelope", "chroma"]:
-#             controlnet_conditioner_config = {
-#                 "id": controlnet_type,
-#                 "type": "pretransform",
-#                 "config": {
-#                     "sample_rate": model_config["sample_rate"],
-#                     "output_dim": model_config["model"]["pretransform"]["config"]["latent_dim"],
-#                     "pretransform_config": model_config["model"]["pretransform"]
-#                 }
-#             }
-#             model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
-#             model_config["model"]["diffusion"]['controlnet_cond_ids'].append(controlnet_type)
-
-#     # ✅ 构建模型
-#     model = create_model_from_config(model_config)
-
-#     # ✅ 加载 checkpoint
-#     state_dict = load_ckpt_state_dict(model_ckpt_path)
-#     model.load_state_dict(state_dict, strict=False)
-
-#     # ✅ 加载 ControlNet
-#     state_dict_controlnet = {
-#         k.split('model.model.')[-1]: v
-#         for k, v in state_dict.items() if k.startswith('model.model')
-#     }
-#     model.model.controlnet.load_state_dict(state_dict_controlnet, strict=False)
-
-#     # ✅ 加载 Conditioner
-#     for controlnet_type in controlnet_types:
-#         if controlnet_type in ["audio", "envelope", "chroma"]:
-#             state_dict_pretransform = {
-#                 k: v for k, v in state_dict.items()
-#                 if k.startswith('pretransform.')
-#             }
-#             model.conditioner.conditioners[controlnet_type].load_state_dict(state_dict_pretransform)
-
-#     return model, model_config
-
 def get_pretrained_controlnet_model(name: str,
                                     controlnet_types : List[str],
                                     depth_factor=0.5):
-    model_config_path = hf_hub_download(name, filename="model_config.json", repo_type='model')
+    # MODIFIED: Define local model directory and load model_config.json from local path
+    local_model_dir = "/cephfs/shared/linzhuo/models/stable-audio-1.0"
+
+    model_config_path = os.path.join(local_model_dir, "model_config.json")
+    if not os.path.exists(model_config_path):
+        raise FileNotFoundError(f"model_config.json not found in {local_model_dir}. (Original 'name' parameter was: {name})")
 
     with open(model_config_path) as f:
         model_config = json.load(f)
+    # 清除原始 config 中的非 audio/envelope/chroma 条目，避免意外加载 T5 tokenizer
+    # model_config["model"]['conditioning']['configs'] = [
+    #     cfg for cfg in model_config["model"]['conditioning']['configs']
+    #     if cfg["id"] in controlnet_types
+    # ]
     model_config["model_type"] = "diffusion_cond_controlnet"
     model_config["model"]["diffusion"]['config']["controlnet_depth_factor"] = depth_factor
     model_config["model"]["diffusion"]["type"] = "dit_controlnet"
@@ -96,11 +45,20 @@ def get_pretrained_controlnet_model(name: str,
 
     model = create_model_from_config(model_config)
 
-    # Try to download the model.safetensors file first, if it doesn't exist, download the model.ckpt file
-    try:
-        model_ckpt_path = hf_hub_download(name, filename="model.safetensors", repo_type='model')
-    except Exception as e:
-        model_ckpt_path = hf_hub_download(name, filename="model.ckpt", repo_type='model')
+    # MODIFIED: Load model checkpoint (.safetensors or .ckpt) from local path
+    # Try to load the model.safetensors file first, if it doesn't exist, load the model.ckpt file
+    safetensors_model_path = os.path.join(local_model_dir, "model.safetensors")
+    ckpt_model_path = os.path.join(local_model_dir, "model.ckpt")
+
+    if os.path.exists(safetensors_model_path):
+        model_ckpt_path = safetensors_model_path
+    elif os.path.exists(ckpt_model_path):
+        model_ckpt_path = ckpt_model_path
+    else:
+        raise FileNotFoundError(
+            f"Neither model.safetensors nor model.ckpt found in {local_model_dir}. "
+            f"(Original 'name' parameter was: {name})"
+        )
 
     state_dict = load_ckpt_state_dict(model_ckpt_path)
 
@@ -112,7 +70,8 @@ def get_pretrained_controlnet_model(name: str,
         if controlnet_type in ["audio", "envelope", "chroma"]:
             state_dict_pretransform = {k: v for k, v in state_dict.items() if k.startswith('pretransform.')}
             model.conditioner.conditioners[controlnet_type].load_state_dict(state_dict_pretransform)
-
+    print(f"Loaded model from {model_ckpt_path}")
+    print(f"Loaded model_config from {model_config_path}")
     return model, model_config
 
 
