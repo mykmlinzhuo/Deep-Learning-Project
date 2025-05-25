@@ -1,5 +1,6 @@
 import json
 from typing import List
+import os
 
 import torch
 from stable_audio_tools.inference.generation import generate_diffusion_cond
@@ -11,6 +12,65 @@ from main.controlnet.factory import create_model_from_config
 from huggingface_hub import hf_hub_download
 
 
+# def get_pretrained_controlnet_model(name: str,
+#                                     controlnet_types: List[str],
+#                                     depth_factor=0.5):
+#     # ✅ 显式指定 snapshot 路径（你机器上的真实路径）
+#     base_path = "/root/.cache/huggingface/hub/models--stabilityai--stable-audio-open-1.0/snapshots/4fa95cf49cd9ff9b544061efef94954f888ad5de"
+#     model_config_path = os.path.join(base_path, "model_config.json")
+#     model_ckpt_path   = os.path.join(base_path, "model.safetensors")  # 或改成 model.ckpt
+
+#     assert os.path.exists(model_config_path), f"Config file not found: {model_config_path}"
+#     assert os.path.exists(model_ckpt_path),   f"Checkpoint file not found: {model_ckpt_path}"
+
+#     # ✅ 加载 config
+#     with open(model_config_path, "r") as f:
+#         model_config = json.load(f)
+
+#     # ✅ 修改模型结构
+#     model_config["model_type"] = "diffusion_cond_controlnet"
+#     model_config["model"]["diffusion"]['config']["controlnet_depth_factor"] = depth_factor
+#     model_config["model"]["diffusion"]["type"] = "dit_controlnet"
+#     model_config["model"]["diffusion"]['controlnet_cond_ids'] = []
+
+#     for controlnet_type in controlnet_types:
+#         if controlnet_type in ["audio", "envelope", "chroma"]:
+#             controlnet_conditioner_config = {
+#                 "id": controlnet_type,
+#                 "type": "pretransform",
+#                 "config": {
+#                     "sample_rate": model_config["sample_rate"],
+#                     "output_dim": model_config["model"]["pretransform"]["config"]["latent_dim"],
+#                     "pretransform_config": model_config["model"]["pretransform"]
+#                 }
+#             }
+#             model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
+#             model_config["model"]["diffusion"]['controlnet_cond_ids'].append(controlnet_type)
+
+#     # ✅ 构建模型
+#     model = create_model_from_config(model_config)
+
+#     # ✅ 加载 checkpoint
+#     state_dict = load_ckpt_state_dict(model_ckpt_path)
+#     model.load_state_dict(state_dict, strict=False)
+
+#     # ✅ 加载 ControlNet
+#     state_dict_controlnet = {
+#         k.split('model.model.')[-1]: v
+#         for k, v in state_dict.items() if k.startswith('model.model')
+#     }
+#     model.model.controlnet.load_state_dict(state_dict_controlnet, strict=False)
+
+#     # ✅ 加载 Conditioner
+#     for controlnet_type in controlnet_types:
+#         if controlnet_type in ["audio", "envelope", "chroma"]:
+#             state_dict_pretransform = {
+#                 k: v for k, v in state_dict.items()
+#                 if k.startswith('pretransform.')
+#             }
+#             model.conditioner.conditioners[controlnet_type].load_state_dict(state_dict_pretransform)
+
+#     return model, model_config
 
 def get_pretrained_controlnet_model(name: str,
                                     controlnet_types : List[str],

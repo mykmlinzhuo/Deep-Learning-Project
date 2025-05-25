@@ -36,7 +36,7 @@ datamodule:
   batch_size_train: 1
   batch_size_val: 1
   collate_fn:
-    _target_: main.data.dataset_musdb.collate_fn_conditional
+    _target_: main.data.dataset_musdb.collate_fn_humming_fixed
     _partial_: True
   drop_last: True
   num_workers: 4
@@ -71,8 +71,8 @@ callbacks:
 loggers:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
-    project: humming2melody
-    # entity: ${oc.env:WANDB_ENTITY}
+    project: ${oc.env:WANDB_PROJECT}
+    entity: ${oc.env:WANDB_ENTITY}
     # offline: False  # set True to store all logs only locally
     job_type: "train"
     group: ""
