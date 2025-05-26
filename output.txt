@@ -1,0 +1,126 @@
+[[36m2025-05-26 19:21:58,979[0m][[34mmain.utils[0m][[32mINFO[0m] - Disabling python warnings! <config.ignore_warnings=True>[0m
+Seed set to 12345
+[[36m2025-05-26 19:21:58,981[0m][[34m__main__[0m][[32mINFO[0m] - Instantiating datamodule <main.module_controlnet_audio.WebDatasetDatamodule>.[0m
+[[36m2025-05-26 19:21:59,217[0m][[34m__main__[0m][[32mINFO[0m] - Instantiating model <main.module_controlnet_audio.Model>.[0m
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+Error executing job with overrides: ['exp=train_musdb_controlnet_audio_large_humming', 'datamodule.train_dataset.path=data/musdb18hq/train.tar', 'datamodule.val_dataset.path=data/musdb18hq/test.tar']
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/connectionpool.py", line 700, in urlopen
+    self._prepare_proxy(conn)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/connectionpool.py", line 996, in _prepare_proxy
+    conn.connect()
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/connection.py", line 414, in connect
+    self.sock = ssl_wrap_socket(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/util/ssl_.py", line 449, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/util/ssl_.py", line 493, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/ssl.py", line 513, in wrap_socket
+    return self.sslsocket_class._create(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/ssl.py", line 1375, in do_handshake
+    self._sslobj.do_handshake()
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/requests/adapters.py", line 667, in send
+    resp = conn.urlopen(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    retries = retries.increment(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /t5-base/resolve/main/tokenizer_config.json (Caused by ProxyError('Cannot connect to proxy.', ConnectionResetError(104, 'Connection reset by peer')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 92, in _call_target
+    return _target_(*args, **kwargs)
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/main/module_controlnet_audio.py", line 41, in __init__
+    model, model_config = get_pretrained_controlnet_model("stabilityai/stable-audio-open-1.0",
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/main/controlnet/pretrained.py", line 46, in get_pretrained_controlnet_model
+    model = create_model_from_config(model_config)
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/main/controlnet/factory.py", line 10, in create_model_from_config
+    return create_diffusion_cond_from_config(model_config)
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/main/controlnet/diffusion.py", line 294, in create_diffusion_cond_from_config
+    conditioner = create_multi_conditioner_from_conditioning_config(conditioning_config)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/stable_audio_tools/models/conditioners.py", line 535, in create_multi_conditioner_from_conditioning_config
+    conditioners[id] = T5Conditioner(**conditioner_config)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/stable_audio_tools/models/conditioners.py", line 285, in __init__
+    self.tokenizer = AutoTokenizer.from_pretrained(t5_model_name)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/transformers/models/auto/tokenization_auto.py", line 950, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/transformers/models/auto/tokenization_auto.py", line 782, in get_tokenizer_config
+    resolved_config_file = cached_file(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/transformers/utils/hub.py", line 312, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/transformers/utils/hub.py", line 557, in cached_files
+    raise e
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/transformers/utils/hub.py", line 470, in cached_files
+    hf_hub_download(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1008, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1071, in _hf_hub_download_to_cache_dir
+    (url_to_download, etag, commit_hash, expected_size, xet_file_data, head_call_error) = _get_metadata_or_catch_error(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1533, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1450, in get_hf_file_metadata
+    r = _request_wrapper(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 286, in _request_wrapper
+    response = _request_wrapper(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 309, in _request_wrapper
+    response = http_backoff(method=method, url=url, **params, retry_on_exceptions=(), retry_on_status_codes=(429,))
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/utils/_http.py", line 310, in http_backoff
+    response = session.request(method=method, url=url, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/huggingface_hub/utils/_http.py", line 96, in send
+    return super().send(request, *args, **kwargs)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/requests/adapters.py", line 694, in send
+    raise ProxyError(e, request=request)
+requests.exceptions.ProxyError: (MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /t5-base/resolve/main/tokenizer_config.json (Caused by ProxyError('Cannot connect to proxy.', ConnectionResetError(104, 'Connection reset by peer')))"), '(Request ID: ac62d2b5-798e-45cd-9f73-e61aedb30007)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/train.py", line 110, in <module>
+    main()
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+  File "/cephfs/shared/linzhuo/stable-audio-controlnet/train.py", line 29, in main
+    model = hydra.utils.instantiate(config.model, _convert_="partial")
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 226, in instantiate
+    return instantiate_node(
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 347, in instantiate_node
+    return _call_target(_target_, partial, args, kwargs, full_key)
+  File "/root/miniconda3/envs/gsplat/lib/python3.10/site-packages/hydra/_internal/instantiate/_instantiate2.py", line 97, in _call_target
+    raise InstantiationException(msg) from e
+hydra.errors.InstantiationException: Error in call to target 'main.module_controlnet_audio.Model':
+ProxyError(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /t5-base/resolve/main/tokenizer_config.json (Caused by ProxyError('Cannot connect to proxy.', ConnectionResetError(104, 'Connection reset by peer')))"), '(Request ID: ac62d2b5-798e-45cd-9f73-e61aedb30007)')
+full_key: model

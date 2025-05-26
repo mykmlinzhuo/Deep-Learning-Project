@@ -145,6 +145,7 @@ class WebDatasetDatamodule(pl.LightningDataModule):
         self.multiprocessing_context = multiprocessing_context
 
         train_dataset = train_dataset.shuffle(self.shuffle_size)
+        # train_dataset = train_dataset
 
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
@@ -176,6 +177,58 @@ class WebDatasetDatamodule(pl.LightningDataModule):
             multiprocessing_context=self.multiprocessing_context
         )
 
+class TruncToOrigDatamodule(pl.LightningDataModule):
+    def __init__(
+        self,
+        train_dataset,
+        val_dataset,
+        batch_size_train: int,
+        batch_size_val: int,
+        num_workers: int,
+        pin_memory: bool,
+        collate_fn=None,
+        drop_last: bool = True,
+        persistent_workers: bool = True,
+        multiprocessing_context: str = "spawn"
+    ) -> None:
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+        self.batch_size_train = batch_size_train
+        self.batch_size_val = batch_size_val
+        self.num_workers = num_workers
+        self.pin_memory = pin_memory
+        self.drop_last = drop_last
+        self.collate_fn = collate_fn
+        self.persistent_workers = persistent_workers
+        self.multiprocessing_context = multiprocessing_context
+
+    def train_dataloader(self) -> DataLoader:
+        return DataLoader(
+            dataset=self.train_dataset,
+            batch_size=self.batch_size_train,
+            shuffle=True,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            drop_last=self.drop_last,
+            collate_fn=self.collate_fn,
+            persistent_workers=self.persistent_workers,
+            multiprocessing_context=self.multiprocessing_context,
+        )
+
+    def val_dataloader(self) -> DataLoader:
+        return DataLoader(
+            dataset=self.val_dataset,
+            batch_size=self.batch_size_val,
+            shuffle=False,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            drop_last=self.drop_last,
+            collate_fn=self.collate_fn,
+            persistent_workers=self.persistent_workers,
+            multiprocessing_context=self.multiprocessing_context,
+        )
+
 
 """ Callbacks """
 
@@ -195,11 +248,13 @@ class SampleLogger(Callback):
         self,
         sampling_steps: List[int],
         cfg_scale: float,
-        num_samples: int = 1
+        num_samples: int = 1,
+        manual_sample_path: Optional[str] = None
     ) -> None:
         self.sampling_steps = sampling_steps
         self.cfg_scale = cfg_scale
         self.num_samples = num_samples
+        self.manual_sample_path = "/cephfs/shared/linzhuo/dataset_maestro/0467"
         self.log_next = False
 
     def on_validation_epoch_start(self, trainer, pl_module):

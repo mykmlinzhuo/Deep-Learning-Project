@@ -34,12 +34,12 @@ datamodule:
 
   shuffle_size: 24
   batch_size_train: 16
-  batch_size_val: 16
+  batch_size_val: 4
   collate_fn:
-    _target_: main.data.dataset_musdb.collate_fn_conditional
+    _target_: main.data.dataset_musdb.collate_fn_piano_to_random_stem
     _partial_: True
   drop_last: True
-  num_workers: 8
+  num_workers: 2
   pin_memory: True
   persistent_workers: True
   multiprocessing_context: spawn
