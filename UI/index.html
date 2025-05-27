@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classical Web Piano</title>
+  <script src="https://cdn.jsdelivr.net/npm/tone@latest/build/Tone.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Base styles */
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      background: #2e1f12;
+      font-family: 'Playfair Display', serif;
+      color: #f5f1ec;
+    }
+    h1 {
+      margin-top: 40px;
+      font-size: 2.5rem;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    /* Keyboard container */
+    #keyboard {
+      position: relative;
+      width: 640px;
+      height: 220px;
+      margin: 40px 0;
+      background: linear-gradient(to bottom, #4b3621 0%, #2e1f12 100%);
+      border: 8px solid #bfa58a;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+    }
+    /* Key styles */
+    .white, .black {
+      position: absolute;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .white {
+      width: 64px;
+      height: 220px;
+      background: #f8f3e9;
+      border: 1px solid #bfa58a;
+      border-bottom: 4px solid #bfa58a;
+      z-index: 1;
+      border-radius: 0 0 8px 8px;
+      box-shadow: inset 0 -4px 6px rgba(0,0,0,0.2);
+    }
+    .white.active { background: #e0d5c3; }
+    .white.highlight {
+      box-shadow: inset 0 -4px 6px rgba(0,0,0,0.5), 0 0 0 4px #ffe601;
+    }
+    .black {
+      width: 40px;
+      height: 140px;
+      background: #2b1d12;
+      border: 1px solid #5b4a3b;
+      border-bottom: 4px solid #5b4a3b;
+      z-index: 2;
+      margin-left: -20px;
+      border-radius: 0 0 4px 4px;
+      box-shadow: inset 0 -4px 6px rgba(0,0,0,0.5);
+    }
+    .black.active { background: #4a3b2c; }
+    .black.highlight {
+      box-shadow: inset 0 -4px 6px rgba(0,0,0,0.5), 0 0 0 4px #ffe601;
+    }
+    .white span{
+      margin-bottom: 8px;
+      color: #5b4a3b;
+      font-weight: 700;
+    }
+    .black span {
+      color: #f5f1ec;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .controls button {
+      padding: 12px 20px;
+      background: #bfa58a;
+      border: 2px solid #f5f1ec;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: 'Playfair Display', serif;
+      color: #2e1f12;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .controls button:hover {
+      background: #d6c3ad;
+      transform: translateY(-2px);
+    }
+    .controls button:disabled {
+      background: #7a6b5d;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    /* Status */
+    #status {
+      font-size: 1.1rem;
+      min-height: 1.2em;
+      margin-bottom: 40px;
+    }
+    #clock {
+      font-variant-numeric: tabular-nums;
+      color: #d6c3ad;
+    }
+  </style>
+</head>
+<body>
+  <h1>Classical Web Piano</h1>
+  <div id="keyboard"></div>
+  <div class="controls">
+    <button id="record">Record</button>
+    <button id="stopRecord" disabled>Stop</button>
+    <button id="prettify">Prettify & Play</button>
+    <button id="download" disabled>Download</button>
+    <button id="demo1">🎂 Happy Birthday</button>
+    <button id="demo2">🌟 Twinkle</button>
+  </div>
+  <span id="status">Idle</span>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const synth = new Tone.Synth().toDestination();
+    const recorder = new Tone.Recorder();
+    synth.connect(recorder);
+
+    let audioStarted = false;
+    async function ensureStarted() {
+      if (!audioStarted) {
+        await Tone.start();
+        audioStarted = true;
+      }
+    }
+
+    const mapKey = { KeyA:'C4', KeyS:'D4', KeyD:'E4', KeyF:'F4', KeyG:'G4', KeyH:'A4', KeyJ:'B4', KeyK:'C5', KeyW:'C#4', KeyE:'D#4', KeyT:'F#4', KeyY:'G#4', KeyU:'A#4' };
+    const invMap = Object.fromEntries(Object.entries(mapKey).map(([k,n])=>[n,k.replace('Key','')]));
+    const events = [];
+    let recording=false, waiting=false, demoing=false, startTime=0, recordTimeout, timerInterval;
+    const maxDuration = 10000;
+
+    const keyboardEl = document.getElementById('keyboard');
+    const whiteOrder = ['C4','D4','E4','F4','G4','A4','B4','C5'];
+    const blackOrder = ['C#4','D#4',null,'F#4','G#4','A#4',null];
+
+    function makeKey(note, cls, left) {
+      const key = document.createElement('div');
+      key.className = cls;
+      key.style.left = left + 'px';
+      key.dataset.note = note;
+      const label = document.createElement('span');
+      label.textContent = invMap[note] || '';
+      key.appendChild(label);
+      keyboardEl.appendChild(key);
+      return key;
+    }
+
+    const whiteKeys = whiteOrder.map((n,i)=> makeKey(n,'white', i*80));
+    const blackKeys = blackOrder.map((n,i)=> n ? makeKey(n,'black', i*80+60) : null);
+
+    function highlightKey(note) {
+      const key = [...whiteKeys, ...blackKeys].find(k=>k && k.dataset.note===note);
+      if(key) key.classList.add('highlight');
+      setTimeout(() => key && key.classList.remove('highlight'), 400);
+    }
+
+    function pressKey(note) {
+      const key = [...whiteKeys, ...blackKeys].find(k=>k && k.dataset.note===note);
+      if(key) key.classList.add('active');
+      setTimeout(() => key && key.classList.remove('active'), 200);
+    }
+
+    function updateTimer() {
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+      document.getElementById('status').textContent = `Recording: ${elapsed}s`;
+    }
+
+    async function playNote(note) {
+      await ensureStarted();
+      if (waiting) {
+        waiting = false;
+        recording = true;
+        startTime = performance.now();
+        recorder.start();
+        document.getElementById('status').textContent = 'Recording: 0.0s';
+        document.getElementById('stopRecord').disabled = false;
+
+        // auto-stop after maxDuration
+        recordTimeout = setTimeout(() => {
+          document.getElementById('stopRecord').click();
+        }, maxDuration);
+
+        // start timer update
+        timerInterval = setInterval(updateTimer, 100);
+      }
+      if (recording) events.push({t: (performance.now() - startTime) / 1000, note});
+      synth.triggerAttackRelease(note, '8n');
+      pressKey(note);
+    }
+
+    keyboardEl.addEventListener('mousedown', e => e.target.dataset.note && playNote(e.target.dataset.note));
+    document.addEventListener('keydown', e => mapKey[e.code] && playNote(mapKey[e.code]));
+
+    document.getElementById('record').onclick = async () => {
+      await ensureStarted();
+      events.length = 0;
+      waiting = true;
+      document.getElementById('status').textContent = 'Waiting for first key';
+      document.getElementById('stopRecord').disabled = true;
+      document.getElementById('download').disabled = true;
+    };
+
+    document.getElementById('stopRecord').onclick = async () => {
+      recording = false;
+      waiting = false;
+      clearTimeout(recordTimeout);
+      clearInterval(timerInterval);
+
+      const blob = await recorder.stop();
+      document.getElementById('status').textContent = `Recorded ${events.length} notes`;
+      document.getElementById('download').disabled = false;
+      document.getElementById('stopRecord').disabled = true;
+
+      const url = URL.createObjectURL(blob);
+      document.getElementById('download').onclick = () => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'recording.webm';
+        a.click();
+      };
+    };
+
+    document.getElementById('prettify').onclick = async () => { await ensureStarted(); if (!events.length) return; /* implement prettify playback if desired */ };
+
+    const demos = {
+      demo1: [{note:'C4',dur:0.5},{note:'C4',dur:0.5},{note:'D4',dur:1},{note:'C4',dur:1},{note:'F4',dur:1},{note:'E4',dur:2}],
+      demo2: [{note:'C4',dur:0.5},{note:'C4',dur:0.5},{note:'G4',dur:1},{note:'G4',dur:1},{note:'A4',dur:1},{note:'A4',dur:1},{note:'G4',dur:2}]
+    };
+
+    ['demo1','demo2'].forEach(id => {
+      document.getElementById(id).onclick = async () => {
+        await ensureStarted();
+        if (demoing) return;
+        events.length = 0;
+        demoing = true;
+        // clearTimeout(recordTimeout);
+        // clearInterval(timerInterval);
+        document.getElementById('status').textContent = 'Playing demo';
+        let t = 0;
+        demos[id].forEach(item => {
+          setTimeout(() => { highlightKey(item.note); }, t * 1000);
+          t += item.dur;
+        });
+        setTimeout(() => {
+          document.getElementById('status').textContent = 'Demo finished';
+          demoing = false;
+        }, t * 1000);
+      };
+    });
+  });
+  </script>
+</body>
+</html>
