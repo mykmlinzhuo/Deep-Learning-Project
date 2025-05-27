@@ -1,0 +1,7 @@
+Cython < 3.0
+librosa
+scipy
+numpy
+crepe
+madmom
+openl3
