@@ -12,9 +12,9 @@ from main.controlnet.pretrained import get_pretrained_controlnet_model
 from stable_audio_tools.inference.sampling import get_alphas_sigmas
 from torch.utils.data import DataLoader
 from main.utils import log_wandb_audio_batch, log_wandb_audio_spectrogram
+import torchaudio
 
-
-
+# torchaudio.set_audio_backend("soundfile")
 
 """ Model """
 
@@ -336,20 +336,32 @@ class SampleLogger(Callback):
                     caption=f"Sampled in {steps} steps.",
                 )
 
-                log_wandb_audio_batch(
-                    logger=wandb_logger,
-                    id=f"sample_sum_{i}",
-                    samples=output[i:i + 1] + y[i:i+1],
-                    sampling_rate=pl_module.sample_rate,
-                    caption=f"Sampled in {steps} steps.",
-                )
-                log_wandb_audio_spectrogram(
-                    logger=wandb_logger,
-                    id=f"sample_sum_{i}",
-                    samples=output[i:i + 1] + y[i:i+1],
-                    sampling_rate=pl_module.sample_rate,
-                    caption=f"Sampled in {steps} steps.",
-                )
+                # log_wandb_audio_batch(
+                #     logger=wandb_logger,
+                #     id=f"sample_sum_{i}",
+                #     samples=output[i:i + 1] + y[i:i+1],
+                #     sampling_rate=pl_module.sample_rate,
+                #     caption=f"Sampled in {steps} steps.",
+                # )
+                # log_wandb_audio_spectrogram(
+                #     logger=wandb_logger,
+                #     id=f"sample_sum_{i}",
+                #     samples=output[i:i + 1] + y[i:i+1],
+                #     sampling_rate=pl_module.sample_rate,
+                #     caption=f"Sampled in {steps} steps.",
+                # )
+            # extract the current time
+            time = trainer.global_step
+            torchaudio.save(
+                f"/root/output/input_{time}_{0}.wav",
+                conditioning[0]["audio"][0].cpu(),
+                sample_rate=pl_module.sample_rate,
+            )
+            torchaudio.save(
+                f"/root/output/output_{time}_{0}.wav",
+                output[0:0+1][0].cpu(),
+                sample_rate=pl_module.sample_rate,
+            )
 
         if is_train:
             pl_module.train()
