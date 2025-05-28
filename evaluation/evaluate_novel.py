@@ -21,13 +21,18 @@ def extract_embedding(path,
                       input_repr="mel256",
                       content_type="music",
                       embedding_size=512,
-                      device="cpu"):
+                      device="cpu",
+                      top_db=None):
     """
     Extract a single embedding vector for a WAV file using TorchOpenL3 :contentReference[oaicite:9]{index=9}.
     Returns a torch.Tensor of shape (embedding_size,).
     """
     # Load audio
     y, sr = load_audio(path, sr=sr)
+    if top_db is not None:
+        y, _ = librosa.effects.trim(y, top_db=top_db)
+        print("Truncated audio length after trimming:", len(y) / sr, "seconds")
+
     # Prepare as (batch, samples)
     audio = torch.from_numpy(y).unsqueeze(0).to(device)
     # Load model
@@ -76,31 +81,37 @@ if __name__ == "__main__":
     # pass
     # ── Example Usage ──
     # 1. Precompute reference embeddings for a folder of WAVs:
-    refs = []
-    dirs_bar = tqdm.tqdm(
-        range(len(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed"))),
-        unit="file",
-        total=len(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed"))
-    )
-    for fn0 in os.listdir("/nvme0n1/xmy/maestro-v3.0.0/2004_processed"):
-        if not os.path.isdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}"):
-            continue
+    # refs = []
+    # dirs_bar = tqdm.tqdm(
+    #     range(len(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed"))),
+    #     unit="file",
+    #     total=len(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed"))
+    # )
+    # for fn0 in os.listdir("/nvme0n1/xmy/maestro-v3.0.0/2004_processed"):
+    #     if not os.path.isdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}"):
+    #         continue
         
-        dirs_bar.set_description(f"Processing {fn0}")
-        for i, fn in enumerate(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}")):
-            dirs_bar.update(1)
-            if fn.endswith("original.wav"):
-                emb = extract_embedding(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}/{fn}")
-                refs.append(emb.numpy())
-        dirs_bar.update(1)
-        dirs_bar.set_postfix({"embeddings": len(refs)})
-    dirs_bar.close()
+    #     dirs_bar.set_description(f"Processing {fn0}")
+    #     for i, fn in enumerate(os.listdir(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}")):
+    #         dirs_bar.update(1)
+    #         if fn.endswith("original.wav"):
+    #             emb = extract_embedding(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/{fn0}/{fn}")
+    #             refs.append(emb.numpy())
+    #     dirs_bar.update(1)
+    #     dirs_bar.set_postfix({"embeddings": len(refs)})
+    # dirs_bar.close()
 
-    print("Extracted embeddings for", len(refs), "reference clips.")
-    refs = np.stack(refs, axis=0)  # shape (N, D)
-    np.save("refs_embeddings.npy", refs)
+    # print("Extracted embeddings for", len(refs), "reference clips.")
+    # refs = np.stack(refs, axis=0)  # shape (N, D)
+    # np.save("refs_embeddings.npy", refs)
+
+    # emb = extract_embedding(f"/nvme0n1/xmy/maestro-v3.0.0/2004_processed/0002/original.wav")
+    emb1 = extract_embedding("input_672_0.wav", top_db=20)
+    emb2 = extract_embedding("output_672_0.wav")
+    similarity = F.cosine_similarity(emb1.unsqueeze(0), emb2.unsqueeze(0)).item()
+    print("Cosine Similarity:", similarity)
     
     # 2. Compute novelty for a new clip:
-    #    ref_embs = np.load("refs_embeddings.npy")
-    #    score = compute_novelty_score("short.wav", ref_embs)
-    #    print(f"Novelty Score: {score:.1f}/100")
+    # ref_embs = np.load("refs_embeddings.npy")
+    # score = compute_novelty_score("short.wav", ref_embs)
+    # print(f"Novelty Score: {score:.1f}/100")

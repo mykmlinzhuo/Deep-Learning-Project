@@ -288,7 +288,7 @@ def analyze_novelty(pitches_hz, onset_times):
 
 def analyze_continuation(short_path, long_path,
                          sr=22050, hop_length=256,
-                         top_db=1, threshold=0.7):
+                         top_db=20, threshold=0.7):
     """
     Check whether the melody in `short_path` appears in `long_path`.
 
@@ -304,6 +304,7 @@ def analyze_continuation(short_path, long_path,
 
     # 2. Trim leading/trailing silence from short (anywhere quieter than top_db dB)
     y_s_trim, _ = librosa.effects.trim(y_s, top_db=top_db)
+    print("Short audio length after trimming:", len(y_s_trim) / sr, "seconds", flush=True)
 
     # 3. Chroma on trimmed & full
     C_s = librosa.feature.chroma_stft(y=y_s_trim, sr=sr, hop_length=hop_length)
@@ -478,14 +479,14 @@ def evaluate_melody(filepath):
 
 if __name__ == "__main__":
     # Example usage (assuming you have a file 'melody.wav'):
-    import os
-    scores, plot_dir = evaluate_melody('recording.wav')
-    print("Scores:", scores)
-    from IPython.display import Image, display
-    for plot_name in ['waveform.png', 'spectrogram.png', 'pitch_distribution.png', 'rhythm_ioi.png']:
-        # display(Image(filename=os.path.join(plot_dir, plot_name)))
-        print(f"Plot saved: {os.path.join(plot_dir, plot_name)}")
+    # import os
+    # scores, plot_dir = evaluate_melody('recording.wav')
+    # print("Scores:", scores)
+    # from IPython.display import Image, display
+    # for plot_name in ['waveform.png', 'spectrogram.png', 'pitch_distribution.png', 'rhythm_ioi.png']:
+    #     # display(Image(filename=os.path.join(plot_dir, plot_name)))
+    #     print(f"Plot saved: {os.path.join(plot_dir, plot_name)}")
 
     # Or to use the continuation analysis:
-    # match, best_score, match_time, scores = analyze_continuation('extracted.wav', 'original.wav')
-    # print(f"Continuation match: {match}, Best score: {best_score}, Match time: {match_time} seconds")
+    match, best_score, match_time, scores = analyze_continuation('extracted.wav', 'original.wav')
+    print(f"Continuation match: {match}, Best score: {best_score:.4f}, Match time: {match_time:.1f} seconds")
