@@ -1,4 +1,6 @@
 # @package _global_
+defaults:
+  - _self_
 
 train: True
 sample_rate: 44100
@@ -21,12 +23,12 @@ datamodule:
 
   train_dataset:
     _target_: main.data.dataset_mykm.create_truncorig_dataset
-    path: /cephfs/shared/linzhuo/processed_maestro/train
+    path: /root/autodl-tmp/processed_maestro/train
     sample_rate: ${sample_rate}
 
   val_dataset:
     _target_: main.data.dataset_mykm.create_truncorig_dataset
-    path: /cephfs/shared/linzhuo/processed_maestro/test
+    path: /root/autodl-tmp/processed_maestro/test
     sample_rate: ${sample_rate}
 
   batch_size_train: 16
@@ -63,14 +65,14 @@ callbacks:
     _target_: main.module_controlnet_audio.SampleLogger
     sampling_steps: [ 100 ]
     cfg_scale: 7.0
-    num_samples: 2
+    num_samples: 8
 
 loggers:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     project: humming2melody
     entity: mykm050721-
-    offline: True  # set True to store all logs only locally
+    # offline: True  # set True to store all logs only locally
     job_type: "train"
     group: ""
     save_dir: ${logs_dir}
