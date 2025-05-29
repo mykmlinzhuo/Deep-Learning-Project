@@ -1,21 +1,33 @@
 import torchaudio
 from audiocraft.models import MusicGen
 
-# Load the input piano melody (WAV file)
-melody_waveform, sr = torchaudio.load("original.wav")
-duration = int(melody_waveform.shape[1] / sr)
 
-print("Input melody duration:", duration, "seconds, sample rate:", sr)
+def add_instrument_accompaniment(input_path, instrument="guitar", output_path="generated_accompaniment.wav"):
+    # Load the input piano melody (WAV file)
+    melody_waveform, sr = torchaudio.load(input_path)
+    duration = int(melody_waveform.shape[1] / sr)
 
-model = MusicGen.get_pretrained('/nvme0n1/xmy/musicgen-stereo-melody-large')
-model.set_generation_params(duration=duration)
+    print("Input melody duration:", duration, "seconds, sample rate:", sr)
 
-# Define the text prompt describing the desired accompaniment
-prompt = "a soulful guitar-only accompaniment in the same style as the input melody"
+    model = MusicGen.get_pretrained('/nvme0n1/xmy/musicgen-stereo-melody-large')
+    model.set_generation_params(duration=duration)
 
-# Generate the accompaniment audio (as PyTorch tensor)
-audio_output = model.generate_with_chroma([prompt], melody_waveform[None, ...], sr)
+    # Define the text prompt describing the desired accompaniment
+    prompt = f"a soulful {instrument}-only accompaniment in the same style as the input melody"
 
-# `audio_output` is a batch of audio waveforms. Save the first output to a file:
-torchaudio.save("generated_accompaniment.wav", audio_output[0].cpu(), sample_rate=32000)
-print("Generated accompaniment saved to 'generated_accompaniment.wav'")
+    # Generate the accompaniment audio (as PyTorch tensor)
+    audio_output = model.generate_with_chroma([prompt], melody_waveform[None, ...], sr)
+
+    # `audio_output` is a batch of audio waveforms. Save the first output to a file:
+    torchaudio.save(output_path, audio_output[0].cpu(), sample_rate=32000)
+    print(f"Generated accompaniment saved to '{output_path}'")
+
+
+if __name__ == "__main__":
+    # Example usage
+    input_path = "original.wav"  # Path to the input piano melody
+    instrument = "guitar"  # Desired accompaniment instrument
+    output_path = "generated_accompaniment.wav"  # Output path for generated accompaniment
+
+    add_instrument_accompaniment(input_path, instrument, output_path)
+
