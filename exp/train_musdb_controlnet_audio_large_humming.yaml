@@ -62,10 +62,10 @@ callbacks:
     max_depth: 2
 
   audio_samples_logger:
-    _target_: main.module_controlnet_audio.SampleLogger
+    _target_: main.module_controlnet_audio.SampleLoggerAll
     sampling_steps: [ 100 ]
     cfg_scale: 7.0
-    num_samples: 8
+    num_samples: None
 
 loggers:
   wandb:

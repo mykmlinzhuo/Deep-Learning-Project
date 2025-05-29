@@ -366,4 +366,73 @@ class SampleLogger(Callback):
         if is_train:
             pl_module.train()
 
+class SampleLoggerAll(Callback):
+    def __init__(
+        self,
+        sampling_steps: List[int],
+        cfg_scale: float,
+        num_samples: Optional[int] = None,  # None = all samples
+    ) -> None:
+        self.sampling_steps = sampling_steps
+        self.cfg_scale = cfg_scale
+        self.num_samples = num_samples
+        self.all_batches = []
 
+    def on_validation_epoch_start(self, trainer, pl_module):
+        self.all_batches = []
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+        self.all_batches.append(batch)
+
+    @torch.no_grad()
+    def on_validation_epoch_end(self, trainer, pl_module):
+        pl_module.eval()
+        global_step = trainer.global_step
+        output_dir = f"/root/output/{global_step}"
+        os.makedirs(output_dir, exist_ok=True)
+
+        device = pl_module.device
+        idx_counter = 0
+
+        for batch in self.all_batches:
+            _, y, prompts, start_seconds, total_seconds = batch
+            y = torch.clip(y, -1, 1)
+            bs = y.shape[0]
+            selected_indices = range(bs) if self.num_samples is None else range(min(self.num_samples, bs))
+
+            conditioning = [{
+                "audio": y[i:i+1].to(device),
+                "prompt": prompts[i],
+                "seconds_start": start_seconds[i],
+                "seconds_total": total_seconds[i],
+            } for i in selected_indices]
+
+            for steps in self.sampling_steps:
+                output = generate_diffusion_cond(
+                    pl_module.model,
+                    batch_size=len(conditioning),
+                    steps=steps,
+                    cfg_scale=self.cfg_scale,
+                    conditioning=conditioning,
+                    sample_size=pl_module.sample_size,
+                    sigma_min=0.3,
+                    sigma_max=500,
+                    sampler_type="dpmpp-3m-sde",
+                    device=device
+                )
+
+                for j, cond in enumerate(conditioning):
+                    in_audio = cond["audio"][0].cpu()
+                    out_audio = output[j].cpu()
+
+                    torchaudio.save(
+                        f"{output_dir}/input_{idx_counter}.wav",
+                        in_audio,
+                        sample_rate=pl_module.sample_rate,
+                    )
+                    torchaudio.save(
+                        f"{output_dir}/output_{idx_counter}.wav",
+                        out_audio,
+                        sample_rate=pl_module.sample_rate,
+                    )
+                    idx_counter += 1
