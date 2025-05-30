@@ -304,7 +304,7 @@ def analyze_continuation(short_path, long_path,
 
     # 2. Trim leading/trailing silence from short (anywhere quieter than top_db dB)
     y_s_trim, _ = librosa.effects.trim(y_s, top_db=top_db)
-    print("Short audio length after trimming:", len(y_s_trim) / sr, "seconds", flush=True)
+    # print("Short audio length after trimming:", len(y_s_trim) / sr, "seconds", flush=True)
 
     # 3. Chroma on trimmed & full
     C_s = librosa.feature.chroma_stft(y=y_s_trim, sr=sr, hop_length=hop_length)
@@ -338,7 +338,7 @@ def analyze_continuation(short_path, long_path,
 # 3. Main evaluation function integrating all #
 ###############################################
 
-def evaluate_melody(filepath):
+def evaluate_melody(filepath, plots=True, verbose=True):
     """
     Evaluate a piano melody WAV file and return scores and visualizations.
     """
@@ -347,24 +347,24 @@ def evaluate_melody(filepath):
     if y is None or len(y) == 0:
         raise ValueError("Could not load audio or audio is empty.")
     # Extract pitch and onset info
-    print("Extracting pitch and onset information...", flush=True)
+    if verbose: print("Extracting pitch and onset information...", flush=True)
     pitches_hz, onset_times = extract_pitch_and_onsets(y, sr)
-    print(f"This audio has {len(pitches_hz)} pitch frames and {len(onset_times)} onsets.", flush=True)
+    if verbose: print(f"This audio has {len(pitches_hz)} pitch frames and {len(onset_times)} onsets.", flush=True)
 
     # Analyze each aspect
-    print("Inspecting pitch and harmony metrics...", flush=True)
+    if verbose: print("Inspecting pitch and harmony metrics...", flush=True)
     pitch_metrics = analyze_pitch_harmony(pitches_hz)
-    print("Inspecting rhythm metrics...", flush=True)
+    if verbose: print("Inspecting rhythm metrics...", flush=True)
     rhythm_metrics = analyze_rhythm(onset_times)
-    print("Inspecting timbre metrics...", flush=True)
+    if verbose: print("Inspecting timbre metrics...", flush=True)
     timbre_metrics = analyze_timbre_and_audio(y, sr)
-    print("Inspecting dynamics metrics...", flush=True)
+    if verbose: print("Inspecting dynamics metrics...", flush=True)
     dynamics_metrics = analyze_dynamics(y, sr, onset_times)
-    print("Analyzing novelty...", flush=True)
+    if verbose: print("Analyzing novelty...", flush=True)
     novelty_score = analyze_novelty(pitches_hz, onset_times)
     
     # For pitch/harmony, we could use key coherence (0-1) and pitch variety to determine a score.
-    print("Inspecting pitch metrics...", flush=True)
+    if verbose: print("Inspecting pitch metrics...", flush=True)
     harmony_score = 0.0
     if pitch_metrics:
         # Example weighting: key coherence (50%), pitch entropy (50%)
@@ -421,61 +421,63 @@ def evaluate_melody(filepath):
     scores["overall"] = overall
 
     # Visualization: waveform, spectrogram, pitch histogram, IOI histogram
-    # We'll generate and save plots as part of evaluation (could return fig objects if needed).
-    import os
-    viz_dir = "evaluation_plots"
-    os.makedirs(viz_dir, exist_ok=True)
-    # Waveform plot
-    T = np.arange(len(y)) / sr
-    plt.figure(figsize=(8, 3))
-    plt.plot(T, y, color='steelblue')
-    plt.title("Waveform")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
-    plt.tight_layout()
-    plt.savefig(os.path.join(viz_dir, "waveform.png"))
-    plt.close()
-    # Spectrogram (using torchaudio's MelSpectrogram already computed, but let's do a full spectrogram for visualization)
-    D = np.abs(librosa.stft(y, n_fft=1024, hop_length=256))
-    D_db = librosa.amplitude_to_db(D, ref=np.max)
-    plt.figure(figsize=(8, 4))
-    librosa.display.specshow(D_db, sr=sr, hop_length=256, x_axis='time', y_axis='log', cmap='magma')
-    plt.colorbar(format="%+2.f dB")
-    plt.title("Spectrogram (Log-Frequency)")
-    plt.tight_layout()
-    plt.savefig(os.path.join(viz_dir, "spectrogram.png"))
-    plt.close()
-    # Pitch class histogram
-    plt.figure(figsize=(5, 3))
-    if len(pitches_hz) > 0:
-        pitch_classes = [int(round(librosa.hz_to_midi(p))) % 12 for p in pitches_hz if p > 0 and np.isfinite(p)]
-        counts = np.bincount(pitch_classes, minlength=12)
-        labels = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-        plt.bar(range(12), counts, color='orange')
-        plt.xticks(range(12), labels)
-        plt.title("Pitch Class Distribution")
-        plt.xlabel("Pitch Class")
-        plt.ylabel("Count")
-    else:
-        plt.text(0.5, 0.5, "No pitches detected", ha='center', va='center')
-    plt.tight_layout()
-    plt.savefig(os.path.join(viz_dir, "pitch_distribution.png"))
-    plt.close()
-    # Inter-onset interval (IOI) histogram
-    plt.figure(figsize=(5, 3))
-    if len(onset_times) > 1:
-        iois = np.diff(onset_times)
-        plt.hist(iois, bins='auto', color='seagreen', alpha=0.7, rwidth=0.85)
-        plt.title("Inter-Onset Interval Distribution")
-        plt.xlabel("Interval (seconds)")
-        plt.ylabel("Count")
-    else:
-        plt.text(0.5, 0.5, "Insufficient onsets", ha='center', va='center')
-    plt.tight_layout()
-    plt.savefig(os.path.join(viz_dir, "rhythm_ioi.png"))
-    plt.close()
+    if plots:
+        import os
+        viz_dir = "evaluation_plots"
+        os.makedirs(viz_dir, exist_ok=True)
+        # Waveform plot
+        T = np.arange(len(y)) / sr
+        plt.figure(figsize=(8, 3))
+        plt.plot(T, y, color='steelblue')
+        plt.title("Waveform")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Amplitude")
+        plt.tight_layout()
+        plt.savefig(os.path.join(viz_dir, "waveform.png"))
+        plt.close()
+        # Spectrogram (using torchaudio's MelSpectrogram already computed, but let's do a full spectrogram for visualization)
+        D = np.abs(librosa.stft(y, n_fft=1024, hop_length=256))
+        D_db = librosa.amplitude_to_db(D, ref=np.max)
+        plt.figure(figsize=(8, 4))
+        librosa.display.specshow(D_db, sr=sr, hop_length=256, x_axis='time', y_axis='log', cmap='magma')
+        plt.colorbar(format="%+2.f dB")
+        plt.title("Spectrogram (Log-Frequency)")
+        plt.tight_layout()
+        plt.savefig(os.path.join(viz_dir, "spectrogram.png"))
+        plt.close()
+        # Pitch class histogram
+        plt.figure(figsize=(5, 3))
+        if len(pitches_hz) > 0:
+            pitch_classes = [int(round(librosa.hz_to_midi(p))) % 12 for p in pitches_hz if p > 0 and np.isfinite(p)]
+            counts = np.bincount(pitch_classes, minlength=12)
+            labels = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+            plt.bar(range(12), counts, color='orange')
+            plt.xticks(range(12), labels)
+            plt.title("Pitch Class Distribution")
+            plt.xlabel("Pitch Class")
+            plt.ylabel("Count")
+        else:
+            plt.text(0.5, 0.5, "No pitches detected", ha='center', va='center')
+        plt.tight_layout()
+        plt.savefig(os.path.join(viz_dir, "pitch_distribution.png"))
+        plt.close()
+        # Inter-onset interval (IOI) histogram
+        plt.figure(figsize=(5, 3))
+        if len(onset_times) > 1:
+            iois = np.diff(onset_times)
+            plt.hist(iois, bins='auto', color='seagreen', alpha=0.7, rwidth=0.85)
+            plt.title("Inter-Onset Interval Distribution")
+            plt.xlabel("Interval (seconds)")
+            plt.ylabel("Count")
+        else:
+            plt.text(0.5, 0.5, "Insufficient onsets", ha='center', va='center')
+        plt.tight_layout()
+        plt.savefig(os.path.join(viz_dir, "rhythm_ioi.png"))
+        plt.close()
 
-    return scores, viz_dir
+        return scores, viz_dir
+    else:
+        return scores
 
 if __name__ == "__main__":
     # Example usage (assuming you have a file 'melody.wav'):
