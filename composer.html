@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Drag-and-Drop Music Composer</title>
+  <style>
+    /* ───────── Reset & Base Styles ───────────────────────────────────────────── */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #222;
+      color: #f0f0f0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+
+    /* ───────── Stage (Drop Zone) ───────────────────────────────────────────────── */
+    #stage {
+      width: 800px;
+      height: 400px;
+      /* Replace this URL with your chosen background image from Pixabay, Freepik, etc. */
+      background-image: url('https://pixabay.com/get/g21ce45ad81d16d268e5ad39e93d54ac844d0abd9321d05d3d2a862ba6a8b683f2b8080df3649fc4a5cf8173e55723dacc61058c7d7176ac9e8fac1c1675f35d5_1280.jpg');
+      background-size: cover;
+      background-position: center;
+      border: 5px solid #5c0000;
+      border-bottom: 30px solid #5c0000; /* “proscenium lip” */
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+      position: relative; /* for absolutely positioned children */
+      margin-top: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 1.2rem;
+      overflow: hidden;
+    }
+    #stage.drag-over {
+      outline: 4px dashed #ffd700;
+    }
+
+    /* ───────── Instrument Panel (Draggables) ──────────────────────────────────── */
+    #instrument-panel {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .instrument {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+      font-size: 2rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .instrument:active {
+      cursor: grabbing;
+      transform: scale(0.9);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    }
+    .instrument[data-instrument="guitar"]   { background: #6b4f4b; }
+    .instrument[data-instrument="drum"]     { background: #4b6b4f; }
+    .instrument[data-instrument="violin"]   { background: #4b4b6b; }
+    .instrument[data-instrument="keyboard"] { background: #6b6b4b; }
+
+    /* ───────── Selected Accompaniments (Sliders & Remove) ────────────────────── */
+    #selected {
+      width: 800px;
+      max-width: 100%;
+      margin-bottom: 20px;
+    }
+    #selected h3 {
+      margin-bottom: 8px;
+      font-size: 1.2rem;
+      border-bottom: 2px solid #555;
+    }
+    #selected-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .selected-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #333;
+      padding: 8px 12px;
+      border-radius: 5px;
+    }
+    .selected-item span {
+      flex: 1;
+      font-size: 1rem;
+    }
+    .selected-item input[type="range"] {
+      flex: 2;
+      margin: 0 10px;
+    }
+    .selected-item button {
+      background: #a00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .selected-item button:hover {
+      background: #c22;
+    }
+
+    /* ───────── Finish Button ─────────────────────────────────────────────────── */
+    #finish-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 20px;
+    }
+    #finish-btn:hover {
+      background: #3fc35b;
+    }
+
+    /* ───────── Hide Native Audio Controls ─────────────────────────────────────── */
+    audio {
+      display: none;
+    }
+
+    /* ───────── Draggable Instruments Inside Stage ─────────────────────────────── */
+    .in-stage {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: grab;
+      user-select: none;
+      z-index: 10;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .in-stage:active {
+      cursor: grabbing;
+      transform: scale(0.9);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Classical Stage Composer</h1>
+
+  <!-- ───────── Stage (Drop Zone) ──────────────────────────────────────────────── -->
+  <div id="stage">
+    <p>Drag instruments here to add accompaniment</p>
+  </div>
+
+  <!-- ───────── Instrument Panel (Draggable Icons) ────────────────────────────── -->
+  <div id="instrument-panel">
+    <div class="instrument" draggable="true" data-instrument="guitar">🎸</div>
+    <div class="instrument" draggable="true" data-instrument="drum">🥁</div>
+    <div class="instrument" draggable="true" data-instrument="violin">🎻</div>
+    <div class="instrument" draggable="true" data-instrument="keyboard">🎹</div>
+  </div>
+
+  <!-- ───────── Selected Accompaniments & Sliders ──────────────────────────────── -->
+  <div id="selected">
+    <h3>Selected Accompaniments:</h3>
+    <div id="selected-list">
+      <!-- Dynamically‐added items appear here -->
+    </div>
+  </div>
+
+  <!-- ───────── Finish Button ─────────────────────────────────────────────────── -->
+  <button id="finish-btn">Finish &amp; Play</button>
+
+
+  <!-- ─────────────────────── JavaScript Logic ──────────────────────────────────── -->
+  <script>
+    // === References to DOM elements ===
+    const stage = document.getElementById("stage");
+    const instruments = document.querySelectorAll(".instrument");
+    const selectedList = document.getElementById("selected-list");
+    const finishBtn = document.getElementById("finish-btn");
+
+    // === Keep track of chosen accompaniments (Audio objects) ===
+    //   Keys: "guitar", "drum", "violin", "keyboard", plus "piano" by default
+    let selectedAccompaniments = {};
+
+    // ─── 1) PRELOAD PIANO (non‐removable) ──────────────────────────────────────
+    // Create the base piano track immediately; do not add a UI “Remove” button for it.
+    const pianoAudio = new Audio("piano.wav");
+    pianoAudio.volume = 1.0;
+    pianoAudio.loop = false;
+    selectedAccompaniments["piano"] = pianoAudio;
+    // (We do NOT create a slider/remove UI entry for “piano”,
+    // so it stays in the mix by default.)
+
+    // ─── 2) DRAG & DROP EVENTS FOR INSTRUMENTS PANEL ──────────────────────────
+    instruments.forEach(inst => {
+      inst.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", inst.dataset.instrument);
+      });
+    });
+
+    // Allow “dragover” so we can drop onto the stage
+    stage.addEventListener("dragover", e => {
+      e.preventDefault();
+      stage.classList.add("drag-over");
+    });
+    stage.addEventListener("dragleave", () => {
+      stage.classList.remove("drag-over");
+    });
+
+    // On drop, add the accompaniment if it’s not already in selectedAccompaniments
+    stage.addEventListener("drop", e => {
+      e.preventDefault();
+      stage.classList.remove("drag-over");
+      const name = e.dataTransfer.getData("text/plain");
+      if (name === "piano") return; // Piano is preloaded; ignore if somehow dropped
+      if (!selectedAccompaniments[name]) {
+        // 2a) Create and store the Audio object
+        const audio = new Audio(name + ".wav");
+        audio.volume = 0.5;
+        audio.loop = false;
+        selectedAccompaniments[name] = audio;
+
+        // 2b) Create the UI slider + remove entry under “Selected Accompaniments”
+        addAudioControlRow(name, audio);
+
+        // 2c) Create a draggable icon INSIDE the stage
+        createInStageIcon(name, e.clientX, e.clientY);
+      }
+    });
+
+    // ─── 3) FUNCTION: Add the slider + “Remove” row for a new accompaniment ─────
+    function addAudioControlRow(name, audio) {
+      const itemDiv = document.createElement("div");
+      itemDiv.classList.add("selected-item");
+
+      // Label
+      const label = document.createElement("span");
+      label.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+
+      // Volume slider
+      const slider = document.createElement("input");
+      slider.type = "range";
+      slider.min = 0;
+      slider.max = 1;
+      slider.step = 0.01;
+      slider.value = 0.5;
+
+      // Numeric volume display
+     const volDisplay = document.createElement("span");
+     volDisplay.classList.add("vol-value");
+     volDisplay.textContent = slider.value; // initial text "0.50"
+
+     // Whenever slider moves, update audio.volume AND the displayed text
+     slider.addEventListener("input", () => {
+       const v = parseFloat(slider.value);
+       audio.volume = v;
+       // Display with two decimal places
+       volDisplay.textContent = v.toFixed(2);
+     });
+
+      // Remove button (also removes from stage if that icon exists)
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => {
+        // Stop playback
+        audio.pause();
+        // Remove from dictionary
+        delete selectedAccompaniments[name];
+        // Remove UI row
+        selectedList.removeChild(itemDiv);
+        // Remove any in‐stage icon
+        const icon = document.querySelector(`.in-stage[data-instrument="${name}"]`);
+        if (icon) stage.removeChild(icon);
+      });
+
+      // Assemble and append
+      itemDiv.appendChild(label);
+      itemDiv.appendChild(slider);
+      itemDiv.appendChild(volDisplay);
+      itemDiv.appendChild(removeBtn);
+      selectedList.appendChild(itemDiv);
+    }
+
+    // ─── 4) FUNCTION: Create a draggable icon INSIDE the stage ────────────────
+    function createInStageIcon(name, pageX, pageY) {
+      // Calculate position relative to the stage container
+      const stageRect = stage.getBoundingClientRect();
+      const x = pageX - stageRect.left - 30; // center 60px icon
+      const y = pageY - stageRect.top - 30;
+
+      // Clone a new DIV
+      const icon = document.createElement("div");
+      icon.classList.add("in-stage");
+      icon.draggable = true;
+      icon.dataset.instrument = name;
+      // Use the same emoji as in the panel
+      let emoji = "";
+      switch (name) {
+        case "guitar":   emoji = "🎸"; break;
+        case "drum":     emoji = "🥁"; break;
+        case "violin":   emoji = "🎻"; break;
+        case "keyboard": emoji = "🎹"; break;
+      }
+      icon.textContent = emoji;
+
+      // Position it at drop location
+      icon.style.left = `${Math.max(0, Math.min(x, stageRect.width - 60))}px`;
+      icon.style.top  = `${Math.max(0, Math.min(y, stageRect.height - 60))}px`;
+
+      // Listen for drag events on this in-stage icon
+      icon.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", name);
+        // For dragend detection, store a reference to this icon
+        setTimeout(() => icon.classList.add("dragging-temp"), 0);
+      });
+      icon.addEventListener("dragend", e => {
+        icon.classList.remove("dragging-temp");
+        // After dropping, check if it’s still inside the stage
+        handleIconDragEnd(icon);
+      });
+
+      // Append into the stage container
+      stage.appendChild(icon);
+    }
+
+    // ─── 5) FUNCTION: On dragend, determine if icon was dropped outside ⇒ remove it ─
+    function handleIconDragEnd(icon) {
+      const name = icon.dataset.instrument;
+      const stageRect = stage.getBoundingClientRect();
+      const iconRect  = icon.getBoundingClientRect();
+      // If icon is completely outside stage bounds, remove accompaniment
+      console.log(`Checking if icon "${name}" is outside stage bounds...`);
+      console.log(`Icon Rect: ${JSON.stringify(iconRect)}`);
+      console.log(`Stage Rect: ${JSON.stringify(stageRect)}`);
+      if (
+        iconRect.right < stageRect.left ||
+        iconRect.left  > stageRect.right ||
+        iconRect.bottom > stageRect.top ||
+        iconRect.top    < stageRect.bottom
+      ) {
+        // Remove its UI row under Selected Accompaniments
+        const row = Array.from(selectedList.children).find(rowEl =>
+          rowEl.querySelector("span").textContent.toLowerCase() === name
+        );
+        if (row) selectedList.removeChild(row);
+
+        // Remove the icon from the stage
+        stage.removeChild(icon);
+
+        // Finally remove its audio
+        if (selectedAccompaniments[name]) {
+          selectedAccompaniments[name].pause();
+          delete selectedAccompaniments[name];
+        }
+      }
+    }
+
+    // ─── 6) “Finish” Button: Play every selected track (including piano) ─────────
+    finishBtn.addEventListener("click", () => {
+      // Play base piano
+      pianoAudio.currentTime = 0;
+      pianoAudio.play();
+
+      // Play each selected accompaniment
+      Object.keys(selectedAccompaniments).forEach(key => {
+        if (key === "piano") return;
+        const audioEl = selectedAccompaniments[key];
+        audioEl.currentTime = 0;
+        audioEl.play();
+      });
+    });
+
+    // ─── Optional: Prevent dropping ANYWHERE else from leaving stray icons ────────
+    document.addEventListener("dragover", e => {
+      e.preventDefault();
+    });
+    document.addEventListener("drop", e => {
+      e.preventDefault();
+    });
+
+  </script>
+</body>
+</html>
