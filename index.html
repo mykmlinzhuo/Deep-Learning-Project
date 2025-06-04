@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Drag-and-Drop Composer – Fully Responsive</title>
+  <title>Drag-and-Drop Composer</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     /* RESET */
@@ -11,7 +11,7 @@
     h1{font-size:clamp(1.2rem,4vw,2rem);text-align:center}
 
     /* STAGE */
-    #stage{width:min(800px,92vw);aspect-ratio:2/1;background:url('stage_bg.png') center/cover;border:4px solid #5c0000;border-bottom:24px solid #5c0000;box-shadow:0 0 12px #0008;position:relative;display:flex;align-items:center;justify-content:center;color:#fffc;font-size:1.1rem;overflow:hidden;touch-action:none;border-radius:6px}
+    #stage{width:min(800px,92vw);aspect-ratio:2/1;background:url('./resources/stage_bg.png') center/cover;border:4px solid #5c0000;border-bottom:24px solid #5c0000;box-shadow:0 0 12px #0008;position:relative;display:flex;align-items:center;justify-content:center;color:#fffc;font-size:1.1rem;overflow:hidden;touch-action:none;border-radius:6px}
 
     /* PALETTE */
     #palette{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
@@ -50,6 +50,33 @@
       .ghost{width:48px;height:48px;font-size:1.7rem}
       .row span.name{font-size:.85rem}
     }
+
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    #controls label {
+      font-size: 1rem;
+      color: #fffc;
+    }
+    #piano-select {
+      background: #444;
+      color: #f0f0f0;
+      border: 2px solid #555;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #piano-select:hover,
+    #piano-select:focus {
+      border-color: #28a745;
+      background: #555;
+      outline: none;
+    }
   </style>
 </head>
 <body>
@@ -62,13 +89,45 @@
     <button id="clear" class="btn danger">Reset</button>
     <button id="ref" class="btn">▶️ Reference</button>
   </div>
+  <div id="controls">
+    <label for="piano-select">Select Piano:</label>
+    <select id="piano-select">
+      <option value="1">Piano 1</option>
+      <option value="2">Piano 2</option>
+      <option value="3">Piano 3</option>
+    </select>
+  </div>
 <script>
+const base_path="./resources"; // Base path for audio files
+
 /***** Build palette & basic constants *****/
 const palette=document.getElementById('palette');const stage=document.getElementById('stage');const list=document.getElementById('sel-list');const playBtn=document.getElementById('play');const clearBtn=document.getElementById('clear');const refBtn=document.getElementById('ref');
 const emojis={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};const selected={};const timers={};let playing=false,start=0,dragCtx=null;
 ['guitar','drum','violin','keyboard'].forEach(n=>{const d=document.createElement('div');d.className=`inst ${n}`;d.textContent=emojis[n];d.dataset.ins=n;palette.appendChild(d);addPointer(d,'palette');});
 /***** Piano main *****/
-const piano=new Audio('piano.wav');piano._on=true;selected.piano=piano;
+let currentPiano = 1;
+let piano;
+const pianoSelect = document.getElementById('piano-select');
+
+function loadPiano(i) {
+  // Pause and replace previous piano (if any)
+  if (piano) {
+    piano.pause();
+  }
+  piano = new Audio(`${base_path}/piano${i}.wav`);
+  piano._on = true;
+  selected.piano = piano;
+}
+
+// Initial load
+loadPiano(currentPiano);
+
+// When dropdown changes, reload piano and reference audio
+pianoSelect.addEventListener('change', (e) => {
+  currentPiano = e.target.value;
+  loadPiano(currentPiano);
+  refAud.src = `${base_path}/input${currentPiano}.wav`;
+});
 /***** Pointer-events drag engine *****/
 function addPointer(el,origin){el.addEventListener('pointerdown',e=>{e.preventDefault();const name=(origin==='palette')?el.dataset.ins:el.dataset.instrument;dragCtx={name,origin,ghost:makeGhost(name)};moveGhost(e);window.addEventListener('pointermove',moveGhost);window.addEventListener('pointerup',endDrag,{once:true});});}
 function makeGhost(name){const g=document.createElement('div');g.className='ghost';g.textContent=emojis[name];document.body.appendChild(g);return g}
@@ -79,8 +138,21 @@ function endDrag(e){window.removeEventListener('pointermove',moveGhost);const {n
   dragCtx=null;}
 function inStage(x,y){const r=stage.getBoundingClientRect();return x>r.left&&x<r.right&&y>r.top&&y<r.bottom}
 /***** Track CRUD *****/
-function addTrack(name,x,y){if(!selected[name]){const a=new Audio(`${name}.wav`);a.volume=.5;a._on=true;selected[name]=a;addRow(name,a);}else if(!selected[name]._on){selected[name]._on=true;selected[name].muted=false;addRow(name,selected[name]);}
-  createIcon(name,x,y);if(playing)play(name);} 
+function addTrack(name, x, y) {
+  if (!selected[name]) {
+    const a = new Audio(`${base_path}/${name}${currentPiano}.wav`);
+    a.volume = 0.5;
+    a._on = true;
+    selected[name] = a;
+    addRow(name, a);
+  } else if (!selected[name]._on) {
+    selected[name]._on = true;
+    selected[name].muted = false;
+    addRow(name, selected[name]);
+  }
+  createIcon(name, x, y);
+  if (playing) play(name);
+}
 function createIcon(name,x,y){let ic=document.querySelector(`.icon[data-instrument="${name}"]`);if(!ic){ic=document.createElement('div');ic.className='icon';ic.dataset.instrument=name;ic.textContent=emojis[name];stage.appendChild(ic);addPointer(ic,'stage');}
   posIcon(ic,x,y);} 
 function posIcon(ic,x,y){const r=stage.getBoundingClientRect();ic.style.left=(x-r.left-28)+'px';ic.style.top=(y-r.top-28)+'px';}
@@ -96,9 +168,23 @@ function note(icon){const n=document.createElement('div');n.className='note';n.t
 function stopAll(){playing=false;playBtn.textContent='Finish & Play';for(const k in selected){selected[k].pause();selected[k].currentTime=0}for(const k in timers){clearInterval(timers[k]);delete timers[k];}document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));}
 /***** Buttons *****/
 playBtn.onclick=()=>{if(playing){stopAll();return;}playing=true;playBtn.textContent='Stop';start=Date.now();piano.currentTime=0;piano.play();for(const k in selected){if(k!=='piano')play(k)}};
-clearBtn.onclick=()=>{stopAll();for(const k in selected){if(k!=='piano')delete selected[k];}document.querySelectorAll('.icon').forEach(el=>el.remove());list.innerHTML='';};
+clearBtn.onclick = () => {
+  stopAll();
+  // Reset piano selection to default (1)
+  pianoSelect.value = "1";
+  currentPiano = 1;
+  loadPiano(currentPiano);
+  // Reset reference audio to default
+  refAud.src = `${base_path}/input${currentPiano}.wav`;
+  // Clear accompaniments
+  for (const k in selected) {
+    if (k !== 'piano') delete selected[k];
+  }
+  document.querySelectorAll('.icon').forEach(el => el.remove());
+  list.innerHTML = '';
+};
 /***** Reference audio *****/
-const refAud=new Audio('input.wav');let refOn=false;refBtn.onclick=()=>{if(refOn){refAud.pause();refBtn.textContent='▶️ Reference';refOn=false}else{refAud.currentTime=0;refAud.play();refBtn.textContent='⏸ Reference';refOn=true}};refAud.onended=()=>{refBtn.textContent='▶️ Reference';refOn=false};
+const refAud = new Audio(`${base_path}/input${currentPiano}.wav`);let refOn=false;refBtn.onclick=()=>{if(refOn){refAud.pause();refBtn.textContent='▶️ Reference';refOn=false}else{refAud.currentTime=0;refAud.play();refBtn.textContent='⏸ Reference';refOn=true}};refAud.onended=()=>{refBtn.textContent='▶️ Reference';refOn=false};
 </script>
 </body>
 </html>
