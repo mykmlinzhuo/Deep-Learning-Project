@@ -125,9 +125,10 @@
       background: #c22;
     }
 
-    /* ───────── Finish Button ─────────────────────────────────────────────────── */
+    /* ───────── Finish & Reset Buttons ─────────────────────────────────────────── */
     #finish-btn, 
-    #ref-audio-btn {
+    #ref-audio-btn,
+    #reset-btn {
       background: #28a745;
       color: white;
       border: none;
@@ -139,7 +140,8 @@
       margin-bottom: 20px;
     }
     #finish-btn:hover,
-    #ref-audio-btn:hover {
+    #ref-audio-btn:hover,
+    #reset-btn:hover {
       background: #3fc35b;
     }
 
@@ -223,8 +225,9 @@
     </div>
   </div>
 
-  <!-- ───────── Finish Button ─────────────────────────────────────────────────── -->
+  <!-- ───────── Finish & Reset Buttons ─────────────────────────────────────────── -->
   <button id="finish-btn">Finish &amp; Play</button>
+  <button id="reset-btn" style="background:#dc3545;color:white;border:none;border-radius:5px;padding:12px 24px;font-size:1rem;cursor:pointer;transition:background 0.2s;margin-bottom:20px;">Reset</button>
 
   <!-- ───────── Reference Audio Button ───────────────────────────────────── -->
   <button id="ref-audio-btn">▶️ Play Reference Audio</button>
@@ -237,6 +240,7 @@
     const instruments = document.querySelectorAll(".instrument");
     const selectedList = document.getElementById("selected-list");
     const finishBtn = document.getElementById("finish-btn");
+    const resetBtn = document.getElementById("reset-btn");
 
     // === Keep track of chosen accompaniments (Audio objects) ===
     //   Keys: "guitar", "drum", "violin", "keyboard", plus "piano" by default
@@ -509,6 +513,22 @@
       e.preventDefault();
     });
 
+    // ─── Reset Button: Stop all audio and clear stage & selections ─────────────
+    resetBtn.addEventListener("click", () => {
+      // 停止所有音频
+      Object.values(selectedAccompaniments).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      pianoAudio.pause();
+      pianoAudio.currentTime = 0;
+      // 清空所有已选乐器
+      selectedAccompaniments = {};
+      // 清空舞台上的所有乐器icon
+      document.querySelectorAll('.in-stage').forEach(icon => icon.remove());
+      // 清空“Selected Accompaniments”列表
+      selectedList.innerHTML = '';
+    });
   </script>
 </body>
 </html>
