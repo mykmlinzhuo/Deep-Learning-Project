@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Drag-and-Drop Music Composer – Final</title>
+  <title>Drag‑and‑Drop Music Composer – Mobile/Desktop</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <style>
-    /* ───────── Reset & Base Styles ───────── */
+    /* ───────── Reset ───────── */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#222;color:#f0f0f0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
-    h1{margin-bottom:10px;font-size:2rem;letter-spacing:1px}
-    /* ───────── Stage (Drop Zone) ───────── */
+    body{background:#222;color:#f0f0f0;font-family:"Segoe UI",Tahoma,Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
+    h1{margin-bottom:10px;font-size:2rem;letter-spacing:1px;text-align:center}
+
+    /* ───────── Stage ───────── */
     #stage{width:800px;height:400px;background:url('stage_bg.png') center/cover;border:5px solid #5c0000;border-bottom:30px solid #5c0000;box-shadow:0 0 15px rgba(0,0,0,.7);position:relative;margin:20px 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:1.2rem;overflow:hidden}
     #stage.drag-over{outline:4px dashed #ffd700}
+
     /* ───────── Instrument Panel ───────── */
     #instrument-panel{display:flex;gap:20px;margin-bottom:20px}
     .instrument{width:60px;height:60px;border-radius:50%;background:#444;display:flex;align-items:center;justify-content:center;cursor:grab;font-size:2rem;transition:.15s}
@@ -19,6 +22,7 @@
     .instrument[data-instrument=drum]{background:#4b6b4f}
     .instrument[data-instrument=violin]{background:#4b4b6b}
     .instrument[data-instrument=keyboard]{background:#6b6b4b}
+
     /* ───────── Selected list ───────── */
     #selected{width:800px;max-width:100%;margin-bottom:20px}
     #selected h3{margin-bottom:8px;font-size:1.2rem;border-bottom:2px solid #555}
@@ -28,23 +32,37 @@
     .selected-item input[type=range]{flex:2;margin:0 10px}
     .selected-item button{background:#a00;color:#fff;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;transition:.2s}
     .selected-item button:hover{background:#c22}
+
     /* ───────── Buttons ───────── */
     button.action{background:#28a745;color:#fff;border:none;border-radius:5px;padding:12px 24px;font-size:1rem;cursor:pointer;transition:.2s;margin-bottom:20px}
     button.action:hover{background:#3fc35b}
     button.danger{background:#dc3545}
     button.danger:hover{background:#e74d59}
-    /* ───────── Hide native audio ───────── */
+
+    /* ───────── Audio / Icons ───────── */
     audio{display:none}
-    /* ───────── Icons in stage ───────── */
     .in-stage{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:grab;transition:.1s;z-index:10}
     .in-stage:active{cursor:grabbing;transform:scale(.9)}
     .in-stage.playing{box-shadow:0 0 12px 4px rgba(255,255,255,.7);filter:brightness(1.3)}
-    /* ───────── Music-note animation ───────── */
+
+    /* ───────── Note animation ───────── */
     @keyframes floatUpFade{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
     .note-float{position:absolute;font-size:1.2rem;pointer-events:none;animation:floatUpFade 1.2s ease-out forwards;z-index:20}
+
+    /* ───────── 横屏提示 ───────── */
+    #landscape-tip{position:fixed;inset:0;background:#111d;display:none;align-items:center;justify-content:center;z-index:9999;font-size:1.8rem;color:#fff;text-align:center;padding:20px;backdrop-filter:blur(3px)}
+
+    /* ───────── Responsive (landscape phones) ───────── */
+    @media (max-width:900px) and (orientation:landscape){
+      #stage,#selected{width:96vw}
+      #stage{height:min(60vw,40vh)}
+      #instrument-panel{flex-wrap:wrap;gap:10px}
+      h1{font-size:1.3rem}
+    }
   </style>
 </head>
 <body>
+  <div id="landscape-tip">请横屏使用本程序 ↻</div>
   <h1>Classical Stage Composer</h1>
   <div id="stage"><p>Drag instruments here to add accompaniment</p></div>
   <div id="instrument-panel">
@@ -57,39 +75,52 @@
   <button id="finish-btn" class="action">Finish &amp; Play</button>
   <button id="reset-btn" class="action danger">Reset</button>
   <button id="ref-audio-btn" class="action">▶️ Play Reference Audio</button>
+
 <script>
-/***** State & constants *****/
+/* ───────── Orientation tip ───────── */
+function checkLandscape(){const tip=document.getElementById('landscape-tip');tip.style.display=(window.innerHeight>window.innerWidth)?'flex':'none';}
+window.addEventListener('DOMContentLoaded',checkLandscape);
+window.addEventListener('resize',checkLandscape);
+window.addEventListener('orientationchange',checkLandscape);
+
+/* ───────── State ───────── */
 const stage=document.getElementById('stage');
 const instruments=document.querySelectorAll('.instrument');
 const selectedList=document.getElementById('selected-list');
 const finishBtn=document.getElementById('finish-btn');
 const resetBtn=document.getElementById('reset-btn');
-let isPlaying=false,playbackStartTime=0,draggingIcon=null;
-const floatingNoteIntervals={},selectedAccompaniments={};
-const emojiMap={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};
-/***** Piano *****/
-const pianoAudio=new Audio('piano.wav');pianoAudio.volume=1;pianoAudio.loop=false;pianoAudio._active=true;selectedAccompaniments.piano=pianoAudio;
-/***** Helpers *****/
-function spawnFloatingNote(target){const n=document.createElement('div');n.className='note-float';n.textContent=Math.random()>.5?'🎵':'🎶';const ox=(Math.random()-.5)*30,oy=(Math.random()-.5)*10;n.style.left=`${target.offsetLeft+20+ox}px`;n.style.top=`${target.offsetTop-10+oy}px`;stage.appendChild(n);setTimeout(()=>n.remove(),1200)}
-function addVisuals(name){const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon)return;icon.classList.add('playing');if(!floatingNoteIntervals[name]){floatingNoteIntervals[name]=setInterval(()=>spawnFloatingNote(icon),600);}const audio=selectedAccompaniments[name];audio.onended=()=>{icon.classList.remove('playing');clearInterval(floatingNoteIntervals[name]);delete floatingNoteIntervals[name];};}
-function createSliderRow(name,audio){const row=document.createElement('div');row.className='selected-item';const label=document.createElement('span');label.textContent=name.charAt(0).toUpperCase()+name.slice(1);const slider=document.createElement('input');slider.type='range';slider.min=0;slider.max=1;slider.step=.01;slider.value=audio.volume;const vol=document.createElement('span');vol.textContent=slider.value;slider.oninput=()=>{audio.volume=parseFloat(slider.value);vol.textContent=audio.volume.toFixed(2)};const btn=document.createElement('button');btn.textContent='Remove';btn.onclick=()=>muteInstrument(name,row);row.append(label,slider,vol,btn);selectedList.appendChild(row);} 
-function createStageIcon(name,x,y){let icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon){icon=document.createElement('div');icon.className='in-stage';icon.draggable=true;icon.dataset.instrument=name;icon.textContent=emojiMap[name];stage.appendChild(icon);}const rect=stage.getBoundingClientRect();icon.style.left=`${Math.max(0,Math.min(x-rect.left-30,rect.width-60))}px`;icon.style.top=`${Math.max(0,Math.min(y-rect.top-30,rect.height-60))}px`;icon.addEventListener('dragstart',e=>{draggingIcon=icon;e.dataTransfer.setData('text/plain',name);});icon.addEventListener('dragend',()=>{handleIconDragEnd(icon);draggingIcon=null;});}
-function handleIconDragEnd(icon){const s=stage.getBoundingClientRect(),i=icon.getBoundingClientRect();if(i.right<s.left||i.left>s.right||i.bottom<s.top||i.top>s.bottom){muteInstrument(icon.dataset.instrument);icon.remove();}}
-/***** Audio Ops *****/
-function playInstrument(name){const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;const elapsed=(Date.now()-playbackStartTime)/1000;const start=()=>{if(!isFinite(audio.duration)||elapsed<audio.duration){try{audio.currentTime=elapsed}catch{}audio.muted=false;audio.play().catch(()=>{});addVisuals(name);}else{audio.pause();}};if(audio.readyState<1){audio.preload='auto';audio.addEventListener('loadedmetadata',start,{once:true});}else start();}
-function muteInstrument(name,row){const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;audio.pause();audio.muted=true;audio._active=false;if(row)row.remove();document.querySelectorAll(`.in-stage[data-instrument="${name}"]`).forEach(el=>el.remove());const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(icon)icon.classList.remove('playing');clearInterval(floatingNoteIntervals[name]);delete floatingNoteIntervals[name];}
-function stopAll(){isPlaying=false;finishBtn.textContent='Finish & Play';Object.values(selectedAccompaniments).forEach(a=>{a.pause();a.currentTime=0});document.querySelectorAll('.in-stage.playing').forEach(el=>el.classList.remove('playing'));Object.values(floatingNoteIntervals).forEach(clearInterval);for(const k in floatingNoteIntervals)delete floatingNoteIntervals[k];}
-/***** DnD palette *****/
-instruments.forEach(inst=>inst.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',inst.dataset.instrument)));
+let isPlaying=false,playbackStart=0,draggingIcon=null;
+const selected={};const notes={};
+const emoji={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};
+
+/* ───────── Piano (main track) ───────── */
+const piano=new Audio('piano.wav');piano.volume=1;piano.loop=false;piano._active=true;selected.piano=piano;
+
+/* ───────── Helper functions ───────── */
+function spawnNote(icon){const d=document.createElement('div');d.className='note-float';d.textContent=Math.random()>.5?'🎵':'🎶';const dx=(Math.random()-.5)*30,dy=(Math.random()-.5)*10;d.style.left=`${icon.offsetLeft+20+dx}px`;d.style.top=`${icon.offsetTop-10+dy}px`;stage.appendChild(d);setTimeout(()=>d.remove(),1200);}
+function addVisual(name){const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon)return;icon.classList.add('playing');if(!notes[name])notes[name]=setInterval(()=>spawnNote(icon),600);const a=selected[name];a.onended=()=>{icon.classList.remove('playing');clearInterval(notes[name]);delete notes[name];};}
+function addSliderRow(name,a){const row=document.createElement('div');row.className='selected-item';const lab=document.createElement('span');lab.textContent=name[0].toUpperCase()+name.slice(1);const sld=document.createElement('input');sld.type='range';sld.min=0;sld.max=1;sld.step=.01;sld.value=a.volume;const val=document.createElement('span');val.textContent=sld.value;sld.oninput=()=>{a.volume=parseFloat(sld.value);val.textContent=a.volume.toFixed(2)};const btn=document.createElement('button');btn.textContent='Remove';btn.onclick=()=>mute(name,row);row.append(lab,sld,val,btn);selectedList.appendChild(row);}  
+function createIcon(name,x,y){let icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon){icon=document.createElement('div');icon.className='in-stage';icon.draggable=true;icon.dataset.instrument=name;icon.textContent=emoji[name];stage.appendChild(icon);}const r=stage.getBoundingClientRect();icon.style.left=`${Math.max(0,Math.min(x-r.left-30,r.width-60))}px`;icon.style.top=`${Math.max(0,Math.min(y-r.top-30 ,r.height-60))}px`;icon.addEventListener('dragstart',e=>{draggingIcon=icon;e.dataTransfer.setData('text/plain',name);});icon.addEventListener('dragend',()=>{handleDragEnd(icon);draggingIcon=null;});}
+function handleDragEnd(icon){const s=stage.getBoundingClientRect();const i=icon.getBoundingClientRect();if(i.right<s.left||i.left>s.right||i.bottom<s.top||i.top>s.bottom){mute(icon.dataset.instrument);icon.remove();}}
+
+/* ───────── Audio control ───────── */
+function play(name){const a=selected[name];if(!a||!a._active)return;const elapsed=(Date.now()-playbackStart)/1000;const start=()=>{if(!isFinite(a.duration)||elapsed<a.duration){try{a.currentTime=elapsed}catch{}a.muted=false;a.play().catch(()=>{});addVisual(name);}else{a.pause();}};if(a.readyState<1){a.preload='auto';a.addEventListener('loadedmetadata',start,{once:true});}else start();}
+function mute(name,row){const a=selected[name];if(!a||!a._active)return;a.pause();a.muted=true;a._active=false;if(row)row.remove();document.querySelectorAll(`.in-stage[data-instrument="${name}"]`).forEach(el=>el.remove());const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(icon)icon.classList.remove('playing');clearInterval(notes[name]);delete notes[name];}
+function stopAll(){isPlaying=false;finishBtn.textContent='Finish & Play';Object.values(selected).forEach(a=>{a.pause();a.currentTime=0});document.querySelectorAll('.in-stage.playing').forEach(el=>el.classList.remove('playing'));Object.values(notes).forEach(clearInterval);for(const k in notes)delete notes[k];}
+
+/* ───────── DnD from palette ───────── */
+instruments.forEach(el=>el.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',el.dataset.instrument)));
 stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('drag-over')});stage.addEventListener('dragleave',()=>stage.classList.remove('drag-over'));
-stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('drag-over');if(draggingIcon){createStageIcon(draggingIcon.dataset.instrument,e.clientX,e.clientY);return;}const name=e.dataTransfer.getData('text/plain');if(name==='piano')return;let audio=selectedAccompaniments[name];if(!audio){audio=new Audio(name+'.wav');audio.volume=.5;audio.loop=false;audio._active=true;selectedAccompaniments[name]=audio;createSliderRow(name,audio);}else if(!audio._active){audio._active=true;audio.muted=false;createSliderRow(name,audio);}createStageIcon(name,e.clientX,e.clientY);if(isPlaying)playInstrument(name);});
-/***** Finish *****/
-finishBtn.onclick=()=>{if(isPlaying){stopAll();return;}isPlaying=true;playbackStartTime=Date.now();finishBtn.textContent='Stop Playback';pianoAudio.currentTime=0;pianoAudio.muted=false;pianoAudio.play();Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')playInstrument(k)});pianoAudio.onended=stopAll;};
-/***** Reset *****/
-resetBtn.onclick=()=>{stopAll();Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')delete selectedAccompaniments[k];});document.querySelectorAll('.in-stage').forEach(el=>el.remove());selectedList.innerHTML='';};
-/***** Reference *****/
-const refBtn=document.getElementById('ref-audio-btn');const refAudio=new Audio('input.wav');let refPlaying=false;refBtn.onclick=()=>{if(refPlaying){refAudio.pause();refBtn.textContent='▶️ Play Reference Audio';refPlaying=false}else{refAudio.currentTime=0;refAudio.play();refBtn.textContent='⏸ Pause Reference Audio';refPlaying=true}};refAudio.onended=()=>{refBtn.textContent='▶️ Play Reference Audio';refPlaying=false};
-/***** Global prevent stray drop *****/
+stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('drag-over');if(draggingIcon){createIcon(draggingIcon.dataset.instrument,e.clientX,e.clientY);return;}const name=e.dataTransfer.getData('text/plain');if(name==='piano')return;let a=selected[name];if(!a){a=new Audio(name+'.wav');a.volume=.5;a.loop=false;a._active=true;selected[name]=a;addSliderRow(name,a);}else if(!a._active){a._active=true;a.muted=false;addSliderRow(name,a);}createIcon(name,e.clientX,e.clientY);if(isPlaying)play(name);});
+
+/* ───────── Control buttons ───────── */
+finishBtn.onclick=()=>{if(isPlaying){stopAll();return;}isPlaying=true;playbackStart=Date.now();finishBtn.textContent='Stop Playback';piano.currentTime=0;piano.muted=false;piano.play();Object.keys(selected).forEach(k=>{if(k!=='piano')play(k)});piano.onended=stopAll;};
+resetBtn.onclick=()=>{stopAll();Object.keys(selected).forEach(k=>{if(k!=='piano')delete selected[k];});document.querySelectorAll('.in-stage').forEach(el=>el.remove());selectedList.innerHTML='';};
+
+/* ───────── Reference audio ───────── */
+const refBtn=document.getElementById('ref-audio-btn');const ref=new Audio('input.wav');let refPlay=false;refBtn.onclick=()=>{if(refPlay){ref.pause();refBtn.textContent='▶️ Play Reference Audio';refPlay=false}else{ref.currentTime=0;ref.play();refBtn.textContent='⏸ Pause Reference Audio';refPlay=true}};ref.onended=()=>{refBtn.textContent='▶️ Play Reference Audio';refPlay=false};
+
+/* ───────── Prevent stray drop ───────── */
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>e.preventDefault());
 </script>
 </body>
