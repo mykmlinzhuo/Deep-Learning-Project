@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Drag‑and‑Drop Music Composer – Final</title>
+  <title>Drag-and-Drop Music Composer – Final</title>
   <style>
     /* ───────── Reset & Base Styles ───────── */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -39,7 +39,7 @@
     .in-stage{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:grab;transition:.1s;z-index:10}
     .in-stage:active{cursor:grabbing;transform:scale(.9)}
     .in-stage.playing{box-shadow:0 0 12px 4px rgba(255,255,255,.7);filter:brightness(1.3)}
-    /* ───────── Music‑note animation ───────── */
+    /* ───────── Music-note animation ───────── */
     @keyframes floatUpFade{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
     .note-float{position:absolute;font-size:1.2rem;pointer-events:none;animation:floatUpFade 1.2s ease-out forwards;z-index:20}
   </style>
@@ -57,133 +57,39 @@
   <button id="finish-btn" class="action">Finish &amp; Play</button>
   <button id="reset-btn" class="action danger">Reset</button>
   <button id="ref-audio-btn" class="action">▶️ Play Reference Audio</button>
-
 <script>
-/***** State *****/
-const stage = document.getElementById('stage');
-const instruments = document.querySelectorAll('.instrument');
-const selectedList = document.getElementById('selected-list');
-const finishBtn = document.getElementById('finish-btn');
-const resetBtn = document.getElementById('reset-btn');
-let isPlaying = false;
-let playbackStartTime = 0;
-const floatingNoteIntervals = {}; // {name: intervalID}
-const selectedAccompaniments = {}; // {name: HTMLAudioElement}
-
-/***** Piano (main track) *****/
-const pianoAudio = new Audio('piano.wav');
-pianoAudio.volume = 1;
-pianoAudio.loop = false;
-pianoAudio._active = true;
-selectedAccompaniments.piano = pianoAudio;
-
+/***** State & constants *****/
+const stage=document.getElementById('stage');
+const instruments=document.querySelectorAll('.instrument');
+const selectedList=document.getElementById('selected-list');
+const finishBtn=document.getElementById('finish-btn');
+const resetBtn=document.getElementById('reset-btn');
+let isPlaying=false,playbackStartTime=0,draggingIcon=null;
+const floatingNoteIntervals={},selectedAccompaniments={};
+const emojiMap={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};
+/***** Piano *****/
+const pianoAudio=new Audio('piano.wav');pianoAudio.volume=1;pianoAudio.loop=false;pianoAudio._active=true;selectedAccompaniments.piano=pianoAudio;
 /***** Helpers *****/
-const emojiMap = {guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};
-function spawnFloatingNote(target){
-  const note=document.createElement('div');
-  note.className='note-float';
-  note.textContent=Math.random()>.5?'🎵':'🎶';
-  const offsetX=(Math.random()-.5)*30;
-  const offsetY=(Math.random()-.5)*10;
-  note.style.left=`${target.offsetLeft+20+offsetX}px`;
-  note.style.top =`${target.offsetTop-10+offsetY}px`;
-  stage.appendChild(note);setTimeout(()=>note.remove(),1200);
-}
-function addVisuals(name){
-  const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);
-  if(!icon)return;
-  icon.classList.add('playing');
-  if(!floatingNoteIntervals[name]){
-    floatingNoteIntervals[name]=setInterval(()=>spawnFloatingNote(icon),600);
-  }
-  const audio=selectedAccompaniments[name];
-  audio.onended=()=>{
-    icon.classList.remove('playing');
-    clearInterval(floatingNoteIntervals[name]);
-    delete floatingNoteIntervals[name];
-  };
-}
-function createSliderRow(name,audio){
-  const row=document.createElement('div');row.className='selected-item';
-  const label=document.createElement('span');label.textContent=name.charAt(0).toUpperCase()+name.slice(1);
-  const slider=document.createElement('input');slider.type='range';slider.min=0;slider.max=1;slider.step=.01;slider.value=audio.volume;
-  const volVal=document.createElement('span');volVal.textContent=slider.value;
-  slider.oninput=()=>{audio.volume=parseFloat(slider.value);volVal.textContent=audio.volume.toFixed(2)};
-  const btn=document.createElement('button');btn.textContent='Remove';btn.onclick=()=>muteInstrument(name,row);
-  row.append(label,slider,volVal,btn);selectedList.appendChild(row);
-}
-function createStageIcon(name,x,y){
-  if(document.querySelector(`.in-stage[data-instrument="${name}"]`))return;
-  const rect=stage.getBoundingClientRect();
-  const icon=document.createElement('div');icon.className='in-stage';icon.draggable=true;icon.dataset.instrument=name;icon.textContent=emojiMap[name];
-  icon.style.left=`${Math.max(0,Math.min(x-rect.left-30,rect.width-60))}px`;
-  icon.style.top =`${Math.max(0,Math.min(y-rect.top-30 ,rect.height-60))}px`;
-  icon.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',name);setTimeout(()=>icon.classList.add('dragging-temp'),0)});
-  icon.addEventListener('dragend',()=>{icon.classList.remove('dragging-temp');handleIconDragEnd(icon)});
-  stage.appendChild(icon);
-}
-function handleIconDragEnd(icon){
-  const name=icon.dataset.instrument;
-  const s=stage.getBoundingClientRect();const i=icon.getBoundingClientRect();
-  if(i.right<s.left||i.left>s.right||i.bottom<s.top||i.top>s.bottom){muteInstrument(name);icon.remove();}
-}
+function spawnFloatingNote(target){const n=document.createElement('div');n.className='note-float';n.textContent=Math.random()>.5?'🎵':'🎶';const ox=(Math.random()-.5)*30,oy=(Math.random()-.5)*10;n.style.left=`${target.offsetLeft+20+ox}px`;n.style.top=`${target.offsetTop-10+oy}px`;stage.appendChild(n);setTimeout(()=>n.remove(),1200)}
+function addVisuals(name){const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon)return;icon.classList.add('playing');if(!floatingNoteIntervals[name]){floatingNoteIntervals[name]=setInterval(()=>spawnFloatingNote(icon),600);}const audio=selectedAccompaniments[name];audio.onended=()=>{icon.classList.remove('playing');clearInterval(floatingNoteIntervals[name]);delete floatingNoteIntervals[name];};}
+function createSliderRow(name,audio){const row=document.createElement('div');row.className='selected-item';const label=document.createElement('span');label.textContent=name.charAt(0).toUpperCase()+name.slice(1);const slider=document.createElement('input');slider.type='range';slider.min=0;slider.max=1;slider.step=.01;slider.value=audio.volume;const vol=document.createElement('span');vol.textContent=slider.value;slider.oninput=()=>{audio.volume=parseFloat(slider.value);vol.textContent=audio.volume.toFixed(2)};const btn=document.createElement('button');btn.textContent='Remove';btn.onclick=()=>muteInstrument(name,row);row.append(label,slider,vol,btn);selectedList.appendChild(row);} 
+function createStageIcon(name,x,y){let icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon){icon=document.createElement('div');icon.className='in-stage';icon.draggable=true;icon.dataset.instrument=name;icon.textContent=emojiMap[name];stage.appendChild(icon);}const rect=stage.getBoundingClientRect();icon.style.left=`${Math.max(0,Math.min(x-rect.left-30,rect.width-60))}px`;icon.style.top=`${Math.max(0,Math.min(y-rect.top-30,rect.height-60))}px`;icon.addEventListener('dragstart',e=>{draggingIcon=icon;e.dataTransfer.setData('text/plain',name);});icon.addEventListener('dragend',()=>{handleIconDragEnd(icon);draggingIcon=null;});}
+function handleIconDragEnd(icon){const s=stage.getBoundingClientRect(),i=icon.getBoundingClientRect();if(i.right<s.left||i.left>s.right||i.bottom<s.top||i.top>s.bottom){muteInstrument(icon.dataset.instrument);icon.remove();}}
 /***** Audio Ops *****/
-function playInstrument(name){
-  const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;
-  const elapsed=(Date.now()-playbackStartTime)/1000;
-  const start=()=>{
-    if(!isFinite(audio.duration)||elapsed<audio.duration){try{audio.currentTime=elapsed}catch{};audio.muted=false;audio.play().catch(()=>{});addVisuals(name);}else{audio.pause();}}
-  if(audio.readyState<1){audio.preload='auto';audio.addEventListener('loadedmetadata',start,{once:true});}else{start();}
-}
-function muteInstrument(name,row){
-  const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;
-  audio.pause();audio.muted=true;audio._active=false;
-  document.querySelectorAll(`.in-stage[data-instrument="${name}"]`).forEach(el=>el.remove());
-  if(row)row.remove(); // remove UI row
-  const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);
-  if(icon){icon.classList.remove('playing');}
-  clearInterval(floatingNoteIntervals[name]);delete floatingNoteIntervals[name];
-}
-function stopAll(){
-  isPlaying=false;finishBtn.textContent='Finish & Play';
-  Object.values(selectedAccompaniments).forEach(a=>{a.pause();a.currentTime=0});
-  document.querySelectorAll('.in-stage.playing').forEach(el=>el.classList.remove('playing'));
-  Object.values(floatingNoteIntervals).forEach(clearInterval);
-  for(const k in floatingNoteIntervals)delete floatingNoteIntervals[k];
-}
-/***** Drag‑and‑drop from palette *****/
+function playInstrument(name){const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;const elapsed=(Date.now()-playbackStartTime)/1000;const start=()=>{if(!isFinite(audio.duration)||elapsed<audio.duration){try{audio.currentTime=elapsed}catch{}audio.muted=false;audio.play().catch(()=>{});addVisuals(name);}else{audio.pause();}};if(audio.readyState<1){audio.preload='auto';audio.addEventListener('loadedmetadata',start,{once:true});}else start();}
+function muteInstrument(name,row){const audio=selectedAccompaniments[name];if(!audio||!audio._active)return;audio.pause();audio.muted=true;audio._active=false;if(row)row.remove();document.querySelectorAll(`.in-stage[data-instrument="${name}"]`).forEach(el=>el.remove());const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(icon)icon.classList.remove('playing');clearInterval(floatingNoteIntervals[name]);delete floatingNoteIntervals[name];}
+function stopAll(){isPlaying=false;finishBtn.textContent='Finish & Play';Object.values(selectedAccompaniments).forEach(a=>{a.pause();a.currentTime=0});document.querySelectorAll('.in-stage.playing').forEach(el=>el.classList.remove('playing'));Object.values(floatingNoteIntervals).forEach(clearInterval);for(const k in floatingNoteIntervals)delete floatingNoteIntervals[k];}
+/***** DnD palette *****/
 instruments.forEach(inst=>inst.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',inst.dataset.instrument)));
-stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('drag-over')});
-stage.addEventListener('dragleave',()=>stage.classList.remove('drag-over'));
-stage.addEventListener('drop',e=>{
-  e.preventDefault();stage.classList.remove('drag-over');
-  const name=e.dataTransfer.getData('text/plain');if(name==='piano')return;
-  let audio=selectedAccompaniments[name];
-  if(!audio){audio=new Audio(name+'.wav');audio.volume=.5;audio.loop=false;audio._active=true;selectedAccompaniments[name]=audio;createSliderRow(name,audio);}else if(!audio._active){audio._active=true;audio.muted=false;createSliderRow(name,audio);} // re‑activate
-  createStageIcon(name,e.clientX,e.clientY);
-  if(isPlaying)playInstrument(name);
-});
-/***** Finish button *****/
-finishBtn.onclick=()=>{
-  if(isPlaying){stopAll();return;}
-  isPlaying=true;playbackStartTime=Date.now();finishBtn.textContent='Stop Playback';
-  pianoAudio.currentTime=0;pianoAudio.muted=false;pianoAudio.play();
-  Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')playInstrument(k)});
-  pianoAudio.onended=stopAll;
-};
-/***** Reset button *****/
-resetBtn.onclick=()=>{
-  stopAll();
-  Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')delete selectedAccompaniments[k];});
-  document.querySelectorAll('.in-stage').forEach(el=>el.remove());
-  selectedList.innerHTML='';
-};
-/***** Reference audio *****/
-const refBtn=document.getElementById('ref-audio-btn');
-const refAudio=new Audio('input.wav');let refPlaying=false;
-refBtn.onclick=()=>{if(refPlaying){refAudio.pause();refBtn.textContent='▶️ Play Reference Audio';refPlaying=false}else{refAudio.currentTime=0;refAudio.play();refBtn.textContent='⏸ Pause Reference Audio';refPlaying=true}};
-refAudio.onended=()=>{refBtn.textContent='▶️ Play Reference Audio';refPlaying=false};
-/***** Global drag cancel *****/
+stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('drag-over')});stage.addEventListener('dragleave',()=>stage.classList.remove('drag-over'));
+stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('drag-over');if(draggingIcon){createStageIcon(draggingIcon.dataset.instrument,e.clientX,e.clientY);return;}const name=e.dataTransfer.getData('text/plain');if(name==='piano')return;let audio=selectedAccompaniments[name];if(!audio){audio=new Audio(name+'.wav');audio.volume=.5;audio.loop=false;audio._active=true;selectedAccompaniments[name]=audio;createSliderRow(name,audio);}else if(!audio._active){audio._active=true;audio.muted=false;createSliderRow(name,audio);}createStageIcon(name,e.clientX,e.clientY);if(isPlaying)playInstrument(name);});
+/***** Finish *****/
+finishBtn.onclick=()=>{if(isPlaying){stopAll();return;}isPlaying=true;playbackStartTime=Date.now();finishBtn.textContent='Stop Playback';pianoAudio.currentTime=0;pianoAudio.muted=false;pianoAudio.play();Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')playInstrument(k)});pianoAudio.onended=stopAll;};
+/***** Reset *****/
+resetBtn.onclick=()=>{stopAll();Object.keys(selectedAccompaniments).forEach(k=>{if(k!=='piano')delete selectedAccompaniments[k];});document.querySelectorAll('.in-stage').forEach(el=>el.remove());selectedList.innerHTML='';};
+/***** Reference *****/
+const refBtn=document.getElementById('ref-audio-btn');const refAudio=new Audio('input.wav');let refPlaying=false;refBtn.onclick=()=>{if(refPlaying){refAudio.pause();refBtn.textContent='▶️ Play Reference Audio';refPlaying=false}else{refAudio.currentTime=0;refAudio.play();refBtn.textContent='⏸ Pause Reference Audio';refPlaying=true}};refAudio.onended=()=>{refBtn.textContent='▶️ Play Reference Audio';refPlaying=false};
+/***** Global prevent stray drop *****/
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>e.preventDefault());
 </script>
 </body>
