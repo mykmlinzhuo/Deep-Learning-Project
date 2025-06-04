@@ -245,6 +245,10 @@
     // === Keep track of chosen accompaniments (Audio objects) ===
     //   Keys: "guitar", "drum", "violin", "keyboard", plus "piano" by default
     let selectedAccompaniments = {};
+    // 播放状态
+    let isPlaying = false;
+    let playbackStartTime = 0;
+    let mainTrackDuration = 0;
 
     // ─── 1) PRELOAD PIANO (non‐removable) ──────────────────────────────────────
     // Create the base piano track immediately; do not add a UI “Remove” button for it.
@@ -326,13 +330,10 @@
       const removeBtn = document.createElement("button");
       removeBtn.textContent = "Remove";
       removeBtn.addEventListener("click", () => {
-        // Stop playback
-        audio.pause();
-        // Remove from dictionary
+        if (isPlaying) stopInstrument(name);
+        else audio.pause();
         delete selectedAccompaniments[name];
-        // Remove UI row
         selectedList.removeChild(itemDiv);
-        // Remove any in‐stage icon
         const icon = document.querySelector(`.in-stage[data-instrument="${name}"]`);
         if (icon) stage.removeChild(icon);
       });
@@ -402,16 +403,12 @@
         iconRect.bottom > stageRect.top ||
         iconRect.top    < stageRect.bottom
       ) {
-        // Remove its UI row under Selected Accompaniments
+        if (isPlaying) stopInstrument(name);
         const row = Array.from(selectedList.children).find(rowEl =>
           rowEl.querySelector("span").textContent.toLowerCase() === name
         );
         if (row) selectedList.removeChild(row);
-
-        // Remove the icon from the stage
         stage.removeChild(icon);
-
-        // Finally remove its audio
         if (selectedAccompaniments[name]) {
           selectedAccompaniments[name].pause();
           delete selectedAccompaniments[name];
@@ -421,44 +418,125 @@
 
     // ─── 6) “Finish” Button: Play every selected track (including piano) ─────────
     finishBtn.addEventListener("click", () => {
+      if (isPlaying) {
+        stopAllPlayback();
+        finishBtn.textContent = "Finish & Play";
+        return;
+      }
+      isPlaying = true;
+      playbackStartTime = Date.now();
+      finishBtn.textContent = "Stop Playback";
       // 1. Play piano
       pianoAudio.currentTime = 0;
       pianoAudio.play();
-
+      mainTrackDuration = pianoAudio.duration;
       // 2. Play selected accompaniments
       Object.keys(selectedAccompaniments).forEach(key => {
         if (key === "piano") return;
-        const audioEl = selectedAccompaniments[key];
+        playInstrument(key);
+      });
+      // 3. piano 结束时兜底清除全部播放状态和音符定时器
+      pianoAudio.onended = () => {
+        stopAllPlayback();
+        finishBtn.textContent = "Finish & Play";
+      };
+    });
+
+    // 新函数：播放特定乐器
+    function playInstrument(instrumentName) {
+      const audioEl = selectedAccompaniments[instrumentName];
+      if (!audioEl) return;
+      if (isPlaying) {
+        const elapsed = (Date.now() - playbackStartTime) / 1000;
+        // 只要音频长度允许就从主时间戳播放，否则静音
+        if (audioEl.duration && elapsed < audioEl.duration) {
+          audioEl.currentTime = elapsed;
+          audioEl.play();
+        } else {
+          audioEl.pause();
+          audioEl.currentTime = 0;
+          // 不播放
+          return;
+        }
+      } else {
         audioEl.currentTime = 0;
         audioEl.play();
-
-        // 3. Find its in-stage icon and add `.playing`
-        const icon = document.querySelector(`.in-stage[data-instrument="${key}"]`);
-        if (icon) icon.classList.add("playing");
-        if (icon) {
-          icon.classList.add("playing");
-          // 定时不断飘出音符
-          floatingNoteIntervals[key] = setInterval(() => {
+      }
+      // 动画部分：添加playing类和音符动画
+      const icon = document.querySelector(`.in-stage[data-instrument="${instrumentName}"]`);
+      if (icon) {
+        icon.classList.add("playing");
+        if (!floatingNoteIntervals[instrumentName]) {
+          floatingNoteIntervals[instrumentName] = setInterval(() => {
             spawnFloatingNote(icon);
-          }, 600); // 每 600ms 飘一个
+          }, 600);
         }
+      }
+      // 音频播放结束时清除动效和状态
+      audioEl.onended = () => {
+        if (icon) icon.classList.remove("playing");
+        clearInterval(floatingNoteIntervals[instrumentName]);
+        delete floatingNoteIntervals[instrumentName];
+      };
+    }
 
-        // 5. 音频播放结束时清除动效和状态
-        audioEl.addEventListener("ended", () => {
-          if (icon) icon.classList.remove("playing");
-          clearInterval(floatingNoteIntervals[key]);
-          delete floatingNoteIntervals[key];
-        });
-      });
+    function stopInstrument(instrumentName) {
+      const audioEl = selectedAccompaniments[instrumentName];
+      if (!audioEl) return;
+      audioEl.pause();
+      // 动画部分：移除playing类和清除音符动画
+      const icon = document.querySelector(`.in-stage[data-instrument="${instrumentName}"]`);
+      if (icon) icon.classList.remove("playing");
+      clearInterval(floatingNoteIntervals[instrumentName]);
+      delete floatingNoteIntervals[instrumentName];
+    }
 
-      // 6. piano 结束时兜底清除全部播放状态和音符定时器
-      pianoAudio.addEventListener("ended", () => {
-        document.querySelectorAll(".in-stage.playing").forEach(icon => {
-          icon.classList.remove("playing");
-        });
-        Object.values(floatingNoteIntervals).forEach(clearInterval);
-        floatingNoteIntervals = {};
+    function stopAllPlayback() {
+      isPlaying = false;
+      Object.values(selectedAccompaniments).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
       });
+      pianoAudio.pause();
+      pianoAudio.currentTime = 0;
+      // ...动画部分可保留...
+    }
+
+    // ─── 拖入新轨道时，如果正在播放，立即同步播放 ─────────
+    stage.addEventListener("drop", e => {
+      e.preventDefault();
+      stage.classList.remove("drag-over");
+      const name = e.dataTransfer.getData("text/plain");
+      if (name === "piano") return;
+      let audio = selectedAccompaniments[name];
+      if (!audio) {
+        audio = new Audio(name + ".wav");
+        audio.volume = 0.5;
+        audio.loop = false;
+        selectedAccompaniments[name] = audio;
+        addAudioControlRow(name, audio);
+      }
+      // 检查舞台上是否已有icon，避免重复
+      if (!document.querySelector(`.in-stage[data-instrument="${name}"]`)) {
+        createInStageIcon(name, e.clientX, e.clientY);
+      }
+      // 拖回去时如果正在播放，始终自动同步播放和动画
+      if (isPlaying) {
+        playInstrument(name);
+      }
+    });
+
+    // ─── Remove按钮也要支持播放时静音 ─────────
+    // Remove button (also removes from stage if that icon exists)
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      if (isPlaying) stopInstrument(name);
+      else audio.pause();
+      delete selectedAccompaniments[name];
+      selectedList.removeChild(itemDiv);
+      const icon = document.querySelector(`.in-stage[data-instrument="${name}"]`);
+      if (icon) stage.removeChild(icon);
     });
 
     // ─── 7) Reference Audio: Toggle Play/Pause for input.wav ──────────────
