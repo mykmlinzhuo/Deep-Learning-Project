@@ -2,99 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Drag‑and‑Drop Music Composer – Pointer‑Driven</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>Drag-and-Drop Composer – Fully Responsive</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Reset */
+    /* RESET */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#222;color:#f0f0f0;font-family:"Segoe UI",Tahoma,Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
-    h1{margin-bottom:10px;font-size:2rem;letter-spacing:1px;text-align:center}
-    /* Stage */
-    #stage{width:800px;height:400px;background:url('stage_bg.png') center/cover;border:5px solid #5c0000;border-bottom:30px solid #5c0000;box-shadow:0 0 15px rgba(0,0,0,.7);position:relative;margin:20px 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:1.2rem;overflow:hidden;touch-action:none}
-    #stage.highlight{outline:4px dashed #ffd700}
-    /* Instrument panel */
-    #instrument-panel{display:flex;gap:20px;margin-bottom:20px;touch-action:none}
-    .instrument{width:60px;height:60px;border-radius:50%;background:#444;display:flex;align-items:center;justify-content:center;cursor:grab;font-size:2rem;transition:.15s}
-    .instrument.guitar{background:#6b4f4b}
-    .instrument.drum{background:#4b6b4f}
-    .instrument.violin{background:#4b4b6b}
-    .instrument.keyboard{background:#6b6b4b}
-    /* Selected list */
-    #selected{width:800px;max-width:100%;margin-bottom:20px}
-    #selected h3{margin-bottom:8px;font-size:1.2rem;border-bottom:2px solid #555}
-    #selected-list{display:flex;flex-direction:column;gap:8px}
-    .selected-item{display:flex;align-items:center;justify-content:space-between;background:#333;padding:8px 12px;border-radius:5px}
-    .selected-item span{flex:1;font-size:1rem}
-    .selected-item input{flex:2;margin:0 10px}
-    .selected-item button{background:#a00;color:#fff;border:none;border-radius:4px;padding:4px 8px;cursor:pointer}
-    /* Buttons */
-    button.action{background:#28a745;color:#fff;border:none;border-radius:5px;padding:12px 24px;font-size:1rem;cursor:pointer;margin-bottom:20px}
-    button.action:hover{background:#3fc35b}
-    button.danger{background:#dc3545}
-    /* Audio & icons */
-    audio{display:none}
-    .in-stage{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:grab;z-index:10;touch-action:none}
-    .in-stage.playing{box-shadow:0 0 12px 4px rgba(255,255,255,.7);filter:brightness(1.3)}
-    /* Note animation */
-    @keyframes float{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
-    .note{position:absolute;font-size:1.2rem;pointer-events:none;animation:float 1.2s ease-out forwards;z-index:20}
-    /* Ghost */
-    .ghost{position:fixed;width:60px;height:60px;font-size:2rem;pointer-events:none;opacity:.8;transform:translate(-50%, -50%)}
-    /* Portrait overlay */
-    #tip{position:fixed;inset:0;background:#000c;color:#fff;display:none;align-items:center;justify-content:center;z-index:9999;font-size:1.6rem;text-align:center;padding:20px}
-    /* Mobile landscape tweaks */
-    @media(max-width:900px) and (orientation:landscape){#stage,#selected{width:96vw}#stage{height:min(60vw,40vh)}#instrument-panel{flex-wrap:wrap;gap:10px}h1{font-size:1.3rem}}
+    body{background:#222;color:#f0f0f0;font-family:"Segoe UI",Tahoma,Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px;gap:12px}
+    h1{font-size:clamp(1.2rem,4vw,2rem);text-align:center}
+
+    /* STAGE */
+    #stage{width:min(800px,92vw);aspect-ratio:2/1;background:url('stage_bg.png') center/cover;border:4px solid #5c0000;border-bottom:24px solid #5c0000;box-shadow:0 0 12px #0008;position:relative;display:flex;align-items:center;justify-content:center;color:#fffc;font-size:1.1rem;overflow:hidden;touch-action:none;border-radius:6px}
+
+    /* PALETTE */
+    #palette{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .inst{width:56px;height:56px;border-radius:50%;background:#444;display:grid;place-items:center;font-size:2rem;cursor:pointer;user-select:none;touch-action:none;transition:.15s}
+    .inst:active{transform:scale(.9);box-shadow:0 0 6px #000a}
+    .inst.guitar{background:#6b4f4b}.inst.drum{background:#4b6b4f}.inst.violin{background:#4b4b6b}.inst.keyboard{background:#6b6b4b}
+
+    /* SELECTED LIST */
+    #selected{width:min(800px,92vw)}
+    #selected h3{font-size:clamp(1rem,3.4vw,1.3rem);margin-bottom:6px;border-bottom:2px solid #555}
+    #sel-list{display:flex;flex-direction:column;gap:6px}
+    .row{display:flex;align-items:center;background:#333;border-radius:4px;padding:6px 10px;gap:6px}
+    .row span.name{flex:1;font-size:.95rem}
+    .row input{flex:2}
+    .row button{background:#a00;color:#fff;border:none;border-radius:4px;padding:4px 6px;font-size:.8rem;cursor:pointer}
+
+    /* BUTTONS */
+    .btn{background:#28a745;color:#fff;border:none;border-radius:5px;padding:10px 20px;font-size:.9rem;cursor:pointer}
+    .btn:hover{background:#3fc35b}.danger{background:#dc3545}.danger:hover{background:#e85c5c}
+
+    /* ICONS ON STAGE */
+    .icon{position:absolute;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:2rem;cursor:pointer;touch-action:none;user-select:none}
+    .icon.playing{box-shadow:0 0 10px 3px #fff8;filter:brightness(1.3)}
+
+    /* FLOAT NOTES */
+    @keyframes float{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-36px);opacity:0}}
+    .note{position:absolute;font-size:1.1rem;animation:float 1.1s ease-out forwards;pointer-events:none}
+
+    /* GHOST DURING DRAG */
+    .ghost{position:fixed;width:56px;height:56px;font-size:2rem;pointer-events:none;opacity:.85;transform:translate(-50%,-50%);z-index:9999}
+
+    /* SMALL-SCREEN PORTRAIT TWEAKS */
+    @media (max-width:600px){
+      #stage{aspect-ratio:1.6/1;border-width:3px;border-bottom-width:18px}
+      .inst,.icon{width:48px;height:48px;font-size:1.7rem}
+      .ghost{width:48px;height:48px;font-size:1.7rem}
+      .row span.name{font-size:.85rem}
+    }
   </style>
 </head>
 <body>
-  <div id="tip">请横屏使用本程序 ↻</div>
   <h1>Classical Stage Composer</h1>
-  <div id="stage"><p>Drag instruments here</p></div>
-  <div id="instrument-panel"></div>
-  <div id="selected"><h3>Selected:</h3><div id="selected-list"></div></div>
-  <button id="finish" class="action">Finish &amp; Play</button>
-  <button id="reset" class="action danger">Reset</button>
-  <button id="ref" class="action">▶️ Reference</button>
-
+  <div id="stage"><p>Drag or Tap instruments</p></div>
+  <div id="palette"></div>
+  <div id="selected"><h3>Selected Accompaniments</h3><div id="sel-list"></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+    <button id="play" class="btn">Finish & Play</button>
+    <button id="clear" class="btn danger">Reset</button>
+    <button id="ref" class="btn">▶️ Reference</button>
+  </div>
 <script>
-/***** Orientation tip *****/
-function check(){document.getElementById('tip').style.display=(window.innerHeight>window.innerWidth)?'flex':'none'}
-window.addEventListener('load',check);window.addEventListener('resize',check);window.addEventListener('orientationchange',check);
-
-/***** State *****/
-const stage=document.getElementById('stage');const panel=document.getElementById('instrument-panel');const fin=document.getElementById('finish');const reset=document.getElementById('reset');const refBtn=document.getElementById('ref');const list=document.getElementById('selected-list');
-const emoji={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};const selected={};const timers={};let playing=false,startTime=0;let dragData=null;
-const piano=new Audio('piano.wav');piano._active=true;selected.piano=piano;
-
-/***** Build palette *****/
-['guitar','drum','violin','keyboard'].forEach(n=>{const d=document.createElement('div');d.className=`instrument ${n}`;d.textContent=emoji[n];d.dataset.ins=n;panel.appendChild(d);addPointer(d,'palette');});
-
-/***** Pointer‑based drag *****/
-function addPointer(el,origin){el.addEventListener('pointerdown',e=>{e.preventDefault();const name=el.dataset.ins||el.dataset.instrument;dragData={name,origin,ghost:createGhost(name),offsetX:e.clientX,offsetY:e.clientY};moveGhost(e);window.addEventListener('pointermove',moveGhost);window.addEventListener('pointerup',endDrag,{once:true});});}
-function createGhost(name){const g=document.createElement('div');g.className='ghost';g.textContent=emoji[name];document.body.appendChild(g);return g}
-function moveGhost(e){if(!dragData)return;dragData.ghost.style.left=e.clientX+'px';dragData.ghost.style.top=e.clientY+'px';}
-function endDrag(e){window.removeEventListener('pointermove',moveGhost);const {name,origin,ghost}=dragData;ghost.remove();const inside=isInsideStage(e.clientX,e.clientY);
-  if(origin==='palette'&&inside){addInstrument(name,e.clientX,e.clientY)}
-  if(origin==='stage'){const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(icon){icon.style.left=(e.clientX-stage.getBoundingClientRect().left-30)+'px';icon.style.top=(e.clientY-stage.getBoundingClientRect().top-30)+'px';if(!inside){removeInstrument(name)}}}
-  dragData=null;}
-function isInsideStage(x,y){const r=stage.getBoundingClientRect();return x>r.left&&x<r.right&&y>r.top&&y<r.bottom}
-
-/***** Instrument ops *****/
-function addInstrument(name,x,y){if(!selected[name]){const a=new Audio(name+'.wav');a.volume=.5;a.loop=false;a._active=true;selected[name]=a;addRow(name,a);}else if(!selected[name]._active){selected[name]._active=true;selected[name].muted=false;addRow(name,selected[name]);}
+/***** Build palette & basic constants *****/
+const palette=document.getElementById('palette');const stage=document.getElementById('stage');const list=document.getElementById('sel-list');const playBtn=document.getElementById('play');const clearBtn=document.getElementById('clear');const refBtn=document.getElementById('ref');
+const emojis={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};const selected={};const timers={};let playing=false,start=0,dragCtx=null;
+['guitar','drum','violin','keyboard'].forEach(n=>{const d=document.createElement('div');d.className=`inst ${n}`;d.textContent=emojis[n];d.dataset.ins=n;palette.appendChild(d);addPointer(d,'palette');});
+/***** Piano main *****/
+const piano=new Audio('piano.wav');piano._on=true;selected.piano=piano;
+/***** Pointer-events drag engine *****/
+function addPointer(el,origin){el.addEventListener('pointerdown',e=>{e.preventDefault();const name=(origin==='palette')?el.dataset.ins:el.dataset.instrument;dragCtx={name,origin,ghost:makeGhost(name)};moveGhost(e);window.addEventListener('pointermove',moveGhost);window.addEventListener('pointerup',endDrag,{once:true});});}
+function makeGhost(name){const g=document.createElement('div');g.className='ghost';g.textContent=emojis[name];document.body.appendChild(g);return g}
+function moveGhost(e){if(!dragCtx)return;dragCtx.ghost.style.left=e.clientX+'px';dragCtx.ghost.style.top=e.clientY+'px';}
+function endDrag(e){window.removeEventListener('pointermove',moveGhost);const {name,origin,ghost}=dragCtx;ghost.remove();const inside=inStage(e.clientX,e.clientY);
+  if(origin==='palette'&&inside)addTrack(name,e.clientX,e.clientY);
+  else if(origin==='stage'){const ic=document.querySelector(`.icon[data-instrument="${name}"]`);if(ic){if(inside){posIcon(ic,e.clientX,e.clientY);}else removeTrack(name);}}
+  dragCtx=null;}
+function inStage(x,y){const r=stage.getBoundingClientRect();return x>r.left&&x<r.right&&y>r.top&&y<r.bottom}
+/***** Track CRUD *****/
+function addTrack(name,x,y){if(!selected[name]){const a=new Audio(`${name}.wav`);a.volume=.5;a._on=true;selected[name]=a;addRow(name,a);}else if(!selected[name]._on){selected[name]._on=true;selected[name].muted=false;addRow(name,selected[name]);}
   createIcon(name,x,y);if(playing)play(name);} 
-function createIcon(name,x,y){let icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(!icon){icon=document.createElement('div');icon.className='in-stage';icon.dataset.instrument=name;icon.textContent=emoji[name];stage.appendChild(icon);addPointer(icon,'stage');}
-  const r=stage.getBoundingClientRect();icon.style.left=(x-r.left-30)+'px';icon.style.top=(y-r.top-30)+'px';}
-function addRow(name,a){const row=document.createElement('div');row.className='selected-item';const lab=document.createElement('span');lab.textContent=name.charAt(0).toUpperCase()+name.slice(1);const sld=document.createElement('input');sld.type='range';sld.min=0;sld.max=1;sld.step=.01;sld.value=a.volume;sld.oninput=()=>{a.volume=parseFloat(sld.value)};const rm=document.createElement('button');rm.textContent='Remove';rm.onclick=()=>removeInstrument(name,row);row.append(lab,sld,rm);list.appendChild(row);} 
-function removeInstrument(name,row){const a=selected[name];if(!a)return;a.pause();a._active=false;a.muted=true;if(row)row.remove();document.querySelectorAll(`.in-stage[data-instrument="${name}"]`).forEach(el=>el.remove());clearInterval(timers[name]);delete timers[name];}
-function play(name){const a=selected[name];if(!a||!a._active)return;const start=()=>{const t=(Date.now()-startTime)/1000;if(!isFinite(a.duration)||t<a.duration){try{a.currentTime=t}catch{}a.play().catch(()=>{});const icon=document.querySelector(`.in-stage[data-instrument="${name}"]`);if(icon){icon.classList.add('playing');if(!timers[name])timers[name]=setInterval(()=>spawnNote(icon),600);}}};if(a.readyState<1){a.addEventListener('loadedmetadata',start,{once:true});a.preload='auto';}else start();}
-function spawnNote(icon){const n=document.createElement('div');n.className='note';n.textContent=Math.random()>.5?'🎵':'🎶';n.style.left=(icon.offsetLeft+20)+'px';n.style.top=(icon.offsetTop-10)+'px';stage.appendChild(n);setTimeout(()=>n.remove(),1200);}
-
-/* Playback buttons */
-fin.onclick=()=>{if(playing){stopAll();return;}playing=true;startTime=Date.now();fin.textContent='Stop';piano.currentTime=0;piano.play();for(const k in selected){if(k!=='piano')play(k)}};
-reset.onclick=()=>{stopAll();for(const k in selected){if(k!=='piano')delete selected[k];}document.querySelectorAll('.in-stage').forEach(el=>el.remove());list.innerHTML='';};
-function stopAll(){playing=false;fin.textContent='Finish & Play';for(const k in selected){selected[k].pause();selected[k].currentTime=0}for(const k in timers){clearInterval(timers[k]);delete timers[k]}document.querySelectorAll('.in-stage.playing').forEach(el=>el.classList.remove('playing'))}
-/* Reference audio */
-const refAud=new Audio('input.wav');let refPlay=false;refBtn.onclick=()=>{if(refPlay){refAud.pause();refBtn.textContent='▶️ Reference';refPlay=false}else{refAud.currentTime=0;refAud.play();refBtn.textContent='⏸ Reference';refPlay=true}};refAud.onended=()=>{refBtn.textContent='▶️ Reference';refPlay=false};
+function createIcon(name,x,y){let ic=document.querySelector(`.icon[data-instrument="${name}"]`);if(!ic){ic=document.createElement('div');ic.className='icon';ic.dataset.instrument=name;ic.textContent=emojis[name];stage.appendChild(ic);addPointer(ic,'stage');}
+  posIcon(ic,x,y);} 
+function posIcon(ic,x,y){const r=stage.getBoundingClientRect();ic.style.left=(x-r.left-28)+'px';ic.style.top=(y-r.top-28)+'px';}
+function addRow(name,a){const row=document.createElement('div');row.className='row';row.innerHTML=`<span class='name'>${name[0].toUpperCase()+name.slice(1)}</span>`;
+  const sld=document.createElement('input');sld.type='range';sld.min=0;sld.max=1;sld.step=.01;sld.value=a.volume;sld.oninput=()=>a.volume=parseFloat(sld.value);
+  const rm=document.createElement('button');rm.textContent='Remove';rm.onclick=()=>removeTrack(name,row);
+  row.append(sld,rm);list.appendChild(row);} 
+function removeTrack(name,row){const a=selected[name];if(!a)return;a.pause();a._on=false;a.muted=true;if(row)row.remove();document.querySelectorAll(`.icon[data-instrument="${name}"]`).forEach(el=>el.remove());clearInterval(timers[name]);delete timers[name];}
+/***** Playback *****/
+function play(name){const a=selected[name];if(!a||!a._on)return;const t=(Date.now()-start)/1000;const begin=()=>{try{a.currentTime=t}catch{}a.play().catch(()=>{});const icon=document.querySelector(`.icon[data-instrument="${name}"]`);if(icon){icon.classList.add('playing');if(!timers[name])timers[name]=setInterval(()=>note(icon),600);}a.onended=()=>{icon?.classList.remove('playing');clearInterval(timers[name]);delete timers[name];};};
+  if(a.readyState<1){a.addEventListener('loadedmetadata',begin,{once:true});a.preload='auto'}else begin();}
+function note(icon){const n=document.createElement('div');n.className='note';n.textContent=Math.random()>.5?'🎵':'🎶';n.style.left=(icon.offsetLeft+18)+'px';n.style.top=(icon.offsetTop-6)+'px';stage.appendChild(n);setTimeout(()=>n.remove(),1100);}
+function stopAll(){playing=false;playBtn.textContent='Finish & Play';for(const k in selected){selected[k].pause();selected[k].currentTime=0}for(const k in timers){clearInterval(timers[k]);delete timers[k];}document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));}
+/***** Buttons *****/
+playBtn.onclick=()=>{if(playing){stopAll();return;}playing=true;playBtn.textContent='Stop';start=Date.now();piano.currentTime=0;piano.play();for(const k in selected){if(k!=='piano')play(k)}};
+clearBtn.onclick=()=>{stopAll();for(const k in selected){if(k!=='piano')delete selected[k];}document.querySelectorAll('.icon').forEach(el=>el.remove());list.innerHTML='';};
+/***** Reference audio *****/
+const refAud=new Audio('input.wav');let refOn=false;refBtn.onclick=()=>{if(refOn){refAud.pause();refBtn.textContent='▶️ Reference';refOn=false}else{refAud.currentTime=0;refAud.play();refBtn.textContent='⏸ Reference';refOn=true}};refAud.onended=()=>{refBtn.textContent='▶️ Reference';refOn=false};
 </script>
 </body>
 </html>
