@@ -25,9 +25,9 @@ def add_instrument_accompaniment(input_path, instrument="guitar", output_path="g
 
 if __name__ == "__main__":
     # Example usage
-    input_path = "original.wav"  # Path to the input piano melody
-    instrument = "guitar"  # Desired accompaniment instrument
-    output_path = "generated_accompaniment.wav"  # Output path for generated accompaniment
+    input_path = "../1008_full/output_0.wav"  # Path to the input piano melody
+    instrument = "flute"  # Desired accompaniment instrument
+    output_path = "flute_accompaniment.wav"  # Output path for generated accompaniment
 
     add_instrument_accompaniment(input_path, instrument, output_path)
 

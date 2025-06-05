@@ -5,10 +5,11 @@ import numpy as np
 from evaluate_melody import analyze_continuation, evaluate_melody
 
 # dir_names = ['56', '672', '1008']
-dir_names = ['672']
+dir_names = ['672_mixed']
 
 if __name__ == "__main__":
     for dir_name in dir_names:
+        # scores = []
         scores = {
             "harmony_pitch": [],
             "rhythm": [],
@@ -53,7 +54,7 @@ if __name__ == "__main__":
             proc_bar.update(1)
 
         proc_bar.close()
-        # print(f"Scores for directory {dir_name}: {scores}")
+        # print(f"Average score for directory {dir_name}: {np.mean(scores)}")
         print(f"Average score for directory {dir_name}:")
         for key, value in scores.items():
             if value:

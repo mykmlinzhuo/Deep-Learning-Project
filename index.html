@@ -163,7 +163,7 @@ function inStage(x,y){const r=stage.getBoundingClientRect();return x>r.left&&x<r
 function addTrack(name, x, y) {
   if (!selected[name]) {
     const a = new Audio(`${base_path}/${name}${currentPiano}.wav`);
-    a.volume = 0.5;
+    a.volume = 0.2;
     a._on = true;
     selected[name] = a;
     addRow(name, a);

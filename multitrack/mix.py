@@ -36,8 +36,8 @@ def mix_music(original_path, accompany_path, output_path, strength=3, accompany_
 
 if __name__ == "__main__":
     # Example usage
-    original_path = "original.wav"  # Path to the original WAV file
-    accompany_path = "generated_accompaniment.wav"  # Path to the generated accompaniment WAV file
-    output_path = "mixed_output.wav"  # Output path for the mixed audio
+    original_path = "../1008_full/output_0.wav"  # Path to the original WAV file
+    accompany_path = "guitar_accompaniment.wav"  # Path to the generated accompaniment WAV file
+    output_path = "guitar_mixed.wav"  # Output path for the mixed audio
 
-    mix_music(original_path, accompany_path, output_path, strength=3, accompany_strength=-6)
+    mix_music(original_path, accompany_path, output_path, strength=3, accompany_strength=-10)
