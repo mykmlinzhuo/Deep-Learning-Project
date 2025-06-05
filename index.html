@@ -102,8 +102,29 @@ const base_path="./resources"; // Base path for audio files
 
 /***** Build palette & basic constants *****/
 const palette=document.getElementById('palette');const stage=document.getElementById('stage');const list=document.getElementById('sel-list');const playBtn=document.getElementById('play');const clearBtn=document.getElementById('clear');const refBtn=document.getElementById('ref');
-const emojis={guitar:'🎸',drum:'🥁',violin:'🎻',keyboard:'🎹'};const selected={};const timers={};let playing=false,start=0,dragCtx=null;
-['guitar','drum','violin','keyboard'].forEach(n=>{const d=document.createElement('div');d.className=`inst ${n}`;d.textContent=emojis[n];d.dataset.ins=n;palette.appendChild(d);addPointer(d,'palette');});
+const emojis={guitar:'🎸',bass:'🎸',violin:'🎻',cello:'🎻',flute:'🪈',saxophone:'🎷',drum:'🥁'};const selected={};const timers={};let playing=false,start=0,dragCtx=null;
+['guitar','bass','violin','cello','flute','saxophone','drum'].forEach(n => {
+  const d = document.createElement('div');
+  d.className = `inst ${n}`;
+  d.dataset.ins = n;
+
+  // Emoji label
+  const emojiSpan = document.createElement('div');
+  emojiSpan.textContent = emojis[n];
+  emojiSpan.style.fontSize = '2rem'; // adjust size as needed
+  d.appendChild(emojiSpan);
+
+  // Text description
+  const label = document.createElement('div');
+  label.textContent = n.charAt(0).toUpperCase() + n.slice(1); // Capitalized instrument name
+  label.style.fontSize = '0.8rem';
+  label.style.marginTop = '4px';
+  label.style.textAlign = 'center';
+  d.appendChild(label);
+
+  palette.appendChild(d);
+  addPointer(d, 'palette');
+});
 /***** Piano main *****/
 let currentPiano = 1;
 let piano;
