@@ -36,8 +36,9 @@ def mix_music(original_path, accompany_path, output_path, strength=3, accompany_
 
 if __name__ == "__main__":
     # Example usage
-    original_path = "original.wav"  # Path to the original WAV file
-    accompany_path = "generated_accompaniment.wav"  # Path to the generated accompaniment WAV file
-    output_path = "mixed_output.wav"  # Output path for the mixed audio
+    original_path = "/home/zhaomj/DL_project/concate_output/672_full/output_37.wav"  # Path to the original WAV file
+    instrument="guitar"  
+    accompany_path = f"/home/zhaomj/DL_project/test_track/output_37_instrument.wav"  # Path to the generated accompaniment WAV file
+    output_path = "/home/zhaomj/DL_project/test_track/output_37_instrument_mix.wav"  # Output path for the mixed audio
 
     mix_music(original_path, accompany_path, output_path, strength=3, accompany_strength=-6)
