@@ -95,6 +95,7 @@
       <option value="1">Piano 1</option>
       <option value="2">Piano 2</option>
       <option value="3">Piano 3</option>
+      <option value="4">Piano 4</option>
     </select>
   </div>
 <script>
@@ -178,7 +179,7 @@ function createIcon(name,x,y){let ic=document.querySelector(`.icon[data-instrume
   posIcon(ic,x,y);} 
 function posIcon(ic,x,y){const r=stage.getBoundingClientRect();ic.style.left=(x-r.left-28)+'px';ic.style.top=(y-r.top-28)+'px';}
 function addRow(name,a){const row=document.createElement('div');row.className='row';row.innerHTML=`<span class='name'>${name[0].toUpperCase()+name.slice(1)}</span>`;
-  const sld=document.createElement('input');sld.type='range';sld.min=0;sld.max=1;sld.step=.01;sld.value=a.volume;sld.oninput=()=>a.volume=parseFloat(sld.value);
+  const sld=document.createElement('input');sld.type='range';sld.min=0;sld.max=0.3;sld.step=.01;sld.value=a.volume;sld.oninput=()=>a.volume=parseFloat(sld.value);
   const rm=document.createElement('button');rm.textContent='Remove';rm.onclick=()=>removeTrack(name,row);
   row.append(sld,rm);list.appendChild(row);} 
 function removeTrack(name,row){const a=selected[name];if(!a)return;a.pause();a._on=false;a.muted=true;if(row)row.remove();document.querySelectorAll(`.icon[data-instrument="${name}"]`).forEach(el=>el.remove());clearInterval(timers[name]);delete timers[name];}
