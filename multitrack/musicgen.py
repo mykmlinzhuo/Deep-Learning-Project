@@ -9,11 +9,11 @@ def add_instrument_accompaniment(input_path, instrument="guitar", output_path="g
 
     print("Input melody duration:", duration, "seconds, sample rate:", sr)
 
-    model = MusicGen.get_pretrained('/nvme0n1/xmy/musicgen-stereo-melody-large')
+    model = MusicGen.get_pretrained('/home/zhaomj/DL_project/models')
     model.set_generation_params(duration=duration)
 
     # Define the text prompt describing the desired accompaniment
-    prompt = f"a soulful {instrument}-only accompaniment in the same style as the input melody"
+    prompt = f"a soulful {instrument}-only accompaniment in the same style as the input melody, no other instruments"
 
     # Generate the accompaniment audio (as PyTorch tensor)
     audio_output = model.generate_with_chroma([prompt], melody_waveform[None, ...], sr)
@@ -25,9 +25,9 @@ def add_instrument_accompaniment(input_path, instrument="guitar", output_path="g
 
 if __name__ == "__main__":
     # Example usage
-    input_path = "../1008_full/output_0.wav"  # Path to the input piano melody
-    instrument = "flute"  # Desired accompaniment instrument
-    output_path = "flute_accompaniment.wav"  # Output path for generated accompaniment
+    input_path = "original.wav"  # Path to the input piano melody
+    instrument = "guitar"  # Desired accompaniment instrument
+    output_path = "generated_accompaniment.wav"  # Output path for generated accompaniment
 
     add_instrument_accompaniment(input_path, instrument, output_path)
 
