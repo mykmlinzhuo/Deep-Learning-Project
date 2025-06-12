@@ -5,4 +5,4 @@ This is the codebase for our Deep Learning project titled "DiffusionTunes: Long-
 2. **stage1_2**: This branch contains the code for the first two stages of the project, including data preprocessing and diffusion model training.
 3. **demo**: This branch contains the code for the other stages, evaluation, and demo.
 
-The url for this project is https://github.com/mykmlinzhuo/Deep-Learning-Project.
+The url for this project is https://github.com/mykmlinzhuo/Deep-Learning-Project. For the space constraint, we only upload the code for main branch here (the demo contains multiple audio files, making it really large). You can find the code for the other branches in the GitHub repository.
