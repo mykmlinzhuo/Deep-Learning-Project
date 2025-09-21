@@ -1,4 +1,8 @@
-# Deep-Learning-Project
+# DiffusionTunes: Long-Form Music Generation via Dual Conditioning
+
+![Our Method](./method.png)
+
+Also checkout our poster at `poster.pdf`!
 
 ## Autoregressive Semantic Closure & Track-wise Orchestration Synthesis
 
